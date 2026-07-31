@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Container Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#F6F5F2;
+  --surface:#FFFFFF;
+  --surface2:#EFEDE8;
+  --border:#E0DDD6;
+  --border2:#C8C4BC;
+  --ink:#1C1C1E;
+  --ink2:#5C5C66;
+  --ink3:#9C9CA8;
+  --blue:#3B6FD4;
+  --blue-bg:#EEF3FC;
+  --blue-border:#C2D3F5;
+  --green:#2A7D52;
+  --green-bg:#EBF7F1;
+  --green-border:#A8D9BF;
+  --amber:#9A6200;
+  --amber-bg:#FDF5E4;
+  --amber-border:#E8D090;
+  --red:#C0382B;
+  --red-bg:#FCECEA;
+  --red-border:#EDB5B0;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.06),0 2px 8px rgba(0,0,0,0.04);
+  --shadow:0 2px 8px rgba(0,0,0,0.08),0 8px 24px rgba(0,0,0,0.04);
+  --r:10px; --r-sm:7px; --r-xs:5px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+@keyframes fadein{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;min-height:100vh}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.logo{width:30px;height:30px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.header-text h1{font-size:15px;font-weight:600;color:var(--ink);letter-spacing:-.3px}
+.header-text p{font-size:11px;color:var(--ink3);margin-top:1px}
+.tabs{margin-left:auto;display:flex;gap:4px;background:var(--surface2);padding:3px;border-radius:8px}
+.tab{padding:5px 14px;border-radius:6px;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--ink2);transition:all .15s}
+.tab.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:280px 260px 1fr;height:calc(100vh - 53px);overflow:hidden}
+.col{overflow-y:auto;padding:16px}
+.col-1{background:var(--surface);border-right:1px solid var(--border)}
+.col-2{background:var(--bg);border-right:1px solid var(--border)}
+.col-3{background:var(--bg)}
+
+/* SECTION LABEL */
+.slabel{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:10px}
+
+/* PART INPUT */
+.part-card{border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:6px;background:var(--bg);transition:border-color .2s,box-shadow .15s}
+.part-card:hover{border-color:var(--border2);box-shadow:var(--shadow-sm)}
+.part-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.part-badge{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;white-space:nowrap;border:1px solid}
+.part-info{font-size:10px;color:var(--ink3);line-height:1.5}
+.part-fields{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.f label{font-size:10px;color:var(--ink3);display:block;margin-bottom:3px;font-weight:500}
+.f input{width:100%;border:1px solid var(--border);border-radius:var(--r-xs);padding:5px 7px;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface);color:var(--ink);outline:none;transition:border-color .2s}
+.f input:focus{border-color:var(--blue)}
+.f input.ro{background:var(--blue-bg);color:var(--blue);font-weight:500;cursor:default;border-color:var(--blue-border)}
+.plt-chip{display:inline-flex;align-items:center;gap:4px;margin-top:7px;background:var(--surface2);border:1px solid var(--border);color:var(--ink2);border-radius:4px;padding:2px 8px;font-size:10px;font-family:'DM Mono',monospace}
+
+/* SUMMARY */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.sum-cell{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-xs);padding:8px 10px}
+.sum-val{font-size:16px;font-weight:600;letter-spacing:-.5px;color:var(--ink)}
+.sum-lbl{font-size:10px;color:var(--ink3);margin-top:1px}
+
+/* CTN TYPE SELECTOR - mixed */
+.ctn-type-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.ctn-type-row-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);transition:border-color .15s}
+.ctn-type-row-item:hover{border-color:var(--border2)}
+.ctn-icon-box{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ctn-type-info{flex:1;min-width:0}
+.ctn-type-name{font-size:12px;font-weight:500;color:var(--ink)}
+.ctn-type-spec{font-size:10px;color:var(--ink3);font-family:'DM Mono',monospace;margin-top:1px}
+.ctn-counter{display:flex;align-items:center;border:1px solid var(--border);border-radius:var(--r-xs);overflow:hidden}
+.ctn-counter button{width:26px;height:26px;border:none;background:var(--surface2);cursor:pointer;font-size:15px;color:var(--ink2);transition:background .1s;font-family:'DM Sans',sans-serif;line-height:1}
+.ctn-counter button:hover{background:var(--border)}
+.ctn-counter em{width:30px;text-align:center;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);font-style:normal}
+.ctn-total-summary{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--blue)}
+.ctn-total-summary strong{font-family:'DM Mono',monospace;font-weight:600}
+
+/* CUSTOM CTN FORM */
+.add-ctn-btn{width:100%;padding:8px;border:1px dashed var(--border2);border-radius:var(--r-sm);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:var(--ink3);transition:all .15s;margin-bottom:6px}
+.add-ctn-btn:hover{background:var(--surface2);border-color:var(--blue);color:var(--blue)}
+.custom-ctn-form{border:1px solid var(--blue-border);border-radius:var(--r-sm);background:var(--blue-bg);padding:11px 12px;margin-bottom:6px;animation:slideIn .2s ease}
+.custom-ctn-form .cf-title{font-size:11px;font-weight:600;color:var(--blue);margin-bottom:9px}
+.cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px}
+.cf-full{grid-column:1/-1}
+.cf-field label{font-size:10px;color:var(--ink3);display:block;margin-bottom:3px;font-weight:500}
+.cf-field input{width:100%;border:1px solid var(--border);border-radius:var(--r-xs);padding:5px 7px;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface);color:var(--ink);outline:none;transition:border-color .2s}
+.cf-field input:focus{border-color:var(--blue)}
+.cf-actions{display:flex;gap:5px;margin-top:8px}
+.cf-actions button{flex:1;padding:6px;border-radius:var(--r-xs);border:1px solid;font-size:11px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s}
+.btn-confirm{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-confirm:hover{opacity:.85}
+.btn-cancel{background:var(--surface);border-color:var(--border);color:var(--ink2)}
+.btn-cancel:hover{background:var(--surface2)}
+.custom-badge{font-size:8px;background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+.del-ctn-btn{background:transparent;border:none;cursor:pointer;color:var(--ink3);font-size:13px;padding:2px;border-radius:3px;transition:color .1s,background .1s;line-height:1;margin-left:2px}
+.del-ctn-btn:hover{color:var(--red);background:var(--red-bg)}
+
+/* FCL/LCL */
+.mode-tabs{display:flex;gap:4px;margin-bottom:8px}
+.mode-tab{flex:1;padding:5px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:var(--ink3);transition:all .15s;text-align:center}
+.mode-tab.active-fcl{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
+.mode-tab.active-lcl{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.lcl-zone{border:1px solid var(--amber-border);border-radius:var(--r);background:var(--surface);overflow:hidden;box-shadow:var(--shadow-sm);animation:slideIn .2s ease}
+.lcl-hdr{padding:11px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--amber-border);background:linear-gradient(105deg,#FDF5E4 0%,#F8EDD5 100%)}
+.lcl-body{padding:14px}
+.lcl-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.lcl-field label{font-size:10px;font-weight:500;color:var(--ink3);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px}
+.lcl-field input{width:100%;border:1px solid var(--border);border-radius:var(--r-xs);padding:6px 8px;font-size:13px;font-family:'DM Mono',monospace;background:var(--surface);color:var(--ink);outline:none;transition:border-color .2s;font-weight:500}
+.lcl-field input:focus{border-color:var(--amber)}
+.lcl-meters{display:flex;flex-direction:column;gap:7px}
+.lcl-badge{background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.4px}
+.mode-section{margin-bottom:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:10px;color:var(--ink3)}
+
+/* POOL */
+.pallet-pool{display:flex;flex-direction:column;gap:6px;min-height:80px}
+.pallet-chip{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--border);cursor:grab;transition:transform .15s,box-shadow .15s,opacity .15s;user-select:none;background:var(--surface)}
+.pallet-chip:hover{transform:translateY(-1px);box-shadow:var(--shadow);border-color:var(--border2)}
+.pallet-chip.dragging{opacity:.3;cursor:grabbing}
+.p-icon{width:30px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.p-detail{flex:1;min-width:0}
+.p-name{font-family:'DM Mono',monospace;font-size:11px;font-weight:500}
+.p-sub{font-size:10px;color:var(--ink3);margin-top:1px}
+.p-cnt{font-family:'DM Mono',monospace;font-size:14px;font-weight:600}
+.p-adj{display:flex;align-items:center;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-left:6px}
+.p-adj button{width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--ink3);transition:background .1s}
+.p-adj button:hover{background:var(--surface2);color:var(--ink)}
+.p-adj em{width:22px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;font-style:normal;color:var(--ink)}
+.empty-pool{border:1px dashed var(--border);border-radius:var(--r-sm);padding:16px;text-align:center;color:var(--ink3);font-size:11px}
+
+/* CONTAINER ZONES */
+.ctn-zones{display:flex;flex-direction:column;gap:10px}
+.ctn-zone{border:1px solid var(--border);border-radius:var(--r);background:var(--surface);overflow:hidden;box-shadow:var(--shadow-sm);transition:border-color .15s,box-shadow .15s;animation:slideIn .2s ease}
+.ctn-zone.dragover{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-bg)}
+.ctn-zone.is-over{border-color:var(--red-border)}
+
+/* header per container type color */
+.ctn-hdr{padding:11px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.ctn-hdr.t0{background:linear-gradient(105deg,#EEF3FC 0%,#E4ECFA 100%)} /* 40GP blue */
+.ctn-hdr.t1{background:linear-gradient(105deg,#EBF7F1 0%,#DEF0E8 100%)} /* 40HQ green */
+.ctn-hdr.t2{background:linear-gradient(105deg,#FDF5E4 0%,#F8EDD5 100%)} /* 20GP amber */
+.ctn-num{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;flex-shrink:0}
+.ctn-num.t0{background:var(--blue);color:#fff}
+.ctn-num.t1{background:var(--green);color:#fff}
+.ctn-num.t2{background:var(--amber);color:#fff}
+.ctn-hdr-text{}
+.ctn-hdr-name{font-size:12px;font-weight:600;color:var(--ink)}
+.ctn-hdr-spec{font-size:10px;color:var(--ink3);font-family:'DM Mono',monospace;margin-top:1px}
+.sp{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;border:1px solid;text-transform:uppercase;letter-spacing:.4px;margin-left:auto}
+.sp-ok{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
+.sp-warn{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.sp-over{background:var(--red-bg);border-color:var(--red-border);color:var(--red)}
+
+.ctn-meters{padding:10px 14px;display:flex;flex-direction:column;gap:7px;border-bottom:1px solid var(--border)}
+.mr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
+.mn{font-size:10px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px}
+.mv{font-size:10px;font-family:'DM Mono',monospace;color:var(--ink2)}
+.mtrack{height:4px;background:var(--surface2);border-radius:20px;overflow:hidden}
+.mfill{height:100%;border-radius:20px;transition:width .4s ease,background .3s}
+
+.ctn-body{min-height:72px;padding:10px;display:flex;flex-wrap:wrap;gap:5px;align-content:flex-start}
+.ctn-body.dob{background:var(--blue-bg)}
+.ctn-plt-tag{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-xs);padding:4px 8px;font-size:11px;font-family:'DM Mono',monospace;color:var(--ink2);cursor:grab;user-select:none;transition:box-shadow .1s}
+.ctn-plt-tag:hover{box-shadow:var(--shadow-sm)}
+.ctn-plt-tag.dragging{opacity:.3}
+.ctn-plt-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.rm{width:14px;height:14px;border:none;background:transparent;cursor:pointer;color:var(--ink3);font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:3px;transition:background .1s,color .1s;padding:0;line-height:1}
+.rm:hover{background:var(--red-bg);color:var(--red)}
+.drop-hint{width:100%;text-align:center;color:var(--ink3);font-size:11px;padding:16px 0;border:1px dashed var(--border);border-radius:var(--r-xs)}
+.ctn-foot{padding:8px 14px;background:var(--surface2);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--ink3)}
+.ctn-foot strong{font-family:'DM Mono',monospace;color:var(--ink2);font-size:11px}
+
+/* INFOGRAPHIC */
+#view-infographic{display:none;padding:20px;overflow-y:auto;height:calc(100vh - 53px)}
+.info-grid{display:flex;flex-wrap:wrap;gap:14px}
+.info-card{flex:1;min-width:260px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);padding:14px;box-shadow:var(--shadow-sm)}
+.info-card-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.info-plt-grid{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px}
+.info-plt{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;font-family:'DM Mono',monospace;border:1px solid;transition:transform .1s;cursor:default}
+.info-plt:hover{transform:scale(1.2);z-index:2;position:relative}
+.info-empty{width:28px;height:28px;border-radius:4px;border:1px dashed var(--border)}
+.ctn-shape{display:flex;flex-direction:column;align-items:center;gap:3px;margin:0 auto 10px;width:fit-content}
+.ctn-shape-rows{display:flex;flex-direction:column;gap:3px;border:2px solid var(--ink3);border-radius:14px;padding:8px 6px;background:var(--surface2)}
+.ctn-shape-row{display:flex;gap:3px;justify-content:center}
+.ctn-shape-door{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.info-detail{font-size:11px;color:var(--ink2);border-top:1px solid var(--border);padding-top:8px;display:flex;flex-direction:column;gap:3px}
+.info-row{display:flex;justify-content:space-between}
+.info-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2)}
+.leg-dot{width:12px;height:12px;border-radius:3px;border:1px solid}
+
+#view-plan{display:block}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">📦</div>
+  <div class="header-text">
+    <h1>Container Planner</h1>
+    <p>ใส่จำนวนชิ้น → ลากพาเลทใส่ตู้ → ดู Infographic</p>
+  </div>
+  <!-- SYNC BAR -->
+  <div id="sync-bar" style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-right:8px">
+    <div id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;transition:background .3s"></div>
+    <div style="display:flex;flex-direction:column;gap:1px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:10px;font-weight:600;color:var(--ink2)">Room:</span>
+        <input id="room-input" value="default" style="font-family:'DM Mono',monospace;font-size:11px;width:90px;border:1px solid var(--border);border-radius:4px;padding:2px 6px;background:var(--surface);color:var(--ink);outline:none" onkeydown="if(event.key==='Enter')joinRoom()" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+        <button onclick="joinRoom()" style="font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--blue);background:var(--blue-bg);color:var(--blue);cursor:pointer;font-family:'DM Sans',sans-serif">เข้าห้อง</button>
+        <button onclick="copyRoomLink()" title="คัดลอกลิงก์" style="font-size:11px;padding:3px 7px;border-radius:4px;border:1px solid var(--border);background:var(--surface);cursor:pointer">🔗</button>
+      </div>
+      <div id="sync-status" style="font-size:9px;color:var(--ink3);font-family:'DM Mono',monospace">ยังไม่ได้เชื่อมต่อ</div>
+    </div>
+    <div id="user-avatars" style="display:flex;gap:3px;margin-left:4px"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('plan',this)">วางแผน & Drag</button>
+    <button class="tab" onclick="switchTab('infographic',this)">Infographic</button>
+    <button class="tab" onclick="openSendToCalendar()" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);font-weight:600">📅 ส่งไป Calendar</button>
+  </div>
+</div>
+
+<div id="view-plan">
+<div class="app">
+
+  <!-- COL 1: Part inputs -->
+  <div class="col col-1">
+    <div class="slabel">จำนวนสินค้า</div>
+    <div id="part-inputs"></div>
+    <button onclick="addCustomer()" style="width:100%;margin-top:6px;padding:7px;border:1px dashed var(--border2);border-radius:var(--r-sm);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:var(--ink3);transition:all .15s;margin-bottom:6px" onmouseover="this.style.background='var(--surface2)';this.style.color='var(--blue)';this.style.borderColor='var(--blue)'" onmouseout="this.style.background='transparent';this.style.color='var(--ink3)';this.style.borderColor='var(--border2)'">＋ เพิ่มลูกค้าใหม่</button>
+    <div class="sum-grid">
+      <div class="sum-cell"><div class="sum-val" id="s-pcs">0</div><div class="sum-lbl">PCS รวม</div></div>
+      <div class="sum-cell"><div class="sum-val" id="s-plt">0</div><div class="sum-lbl">PLT รวม</div></div>
+      <div class="sum-cell"><div class="sum-val" id="s-gw">0</div><div class="sum-lbl">GW kg</div></div>
+      <div class="sum-cell"><div class="sum-val" id="s-cbm">0</div><div class="sum-lbl">CBM</div></div>
+    </div>
+  </div>
+
+  <!-- COL 2: Container config + pallet pool -->
+  <div class="col col-2">
+    <div class="slabel">โหมดการส่ง</div>
+    <div class="mode-tabs">
+      <button class="mode-tab active-fcl" id="tab-fcl" onclick="setMode('fcl')">🚢 FCL — เหมาตู้</button>
+      <button class="mode-tab" id="tab-lcl" onclick="setMode('lcl')">📦 LCL — รวมตู้</button>
+    </div>
+    <div id="fcl-section">
+      <div class="slabel">ตั้งค่าตู้ (ผสมขนาดได้)</div>
+      <div class="ctn-type-grid" id="ctn-type-grid"></div>
+      <button class="add-ctn-btn" onclick="showCustomForm()">＋ เพิ่มตู้ขนาดเอง</button>
+      <div id="custom-ctn-form" style="display:none"></div>
+    </div>
+    <div id="lcl-section" style="display:none">
+      <div class="mode-section">กรอกพื้นที่ที่ได้รับ / สถานที่รวมตู้ LCL</div>
+    </div>
+    <div class="ctn-total-summary" id="ctn-summary">เลือกจำนวนตู้ด้านบน</div>
+
+    <div style="height:1px;background:var(--border);margin:12px 0"></div>
+
+    <div class="slabel">พาเลทรอจัด &nbsp;<span id="pool-label" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink2);text-transform:none;letter-spacing:0">0 PLT</span></div>
+    <div id="pallet-pool" class="pallet-pool"></div>
+  </div>
+
+  <!-- COL 3: Container drop zones -->
+  <div class="col col-3">
+    <div class="slabel">ตู้คอนเทนเนอร์ &nbsp;<span id="ctn-zone-label" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink2);text-transform:none;letter-spacing:0"></span></div>
+    <div id="fcl-zones">
+      <div class="ctn-zones" id="ctn-zones"></div>
+    </div>
+    <div id="lcl-zones" style="display:none">
+      <div class="ctn-zones" id="lcl-ctn-zones"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div id="view-infographic">
+  <div class="slabel" style="margin-bottom:14px">Infographic — การจัดวางพาเลท</div>
+  <div class="info-grid" id="info-grid"></div>
+  <div class="info-legend" id="info-legend"></div>
+</div>
+
+<script type="module">
+/* ═══ DATA ═══ */
+// CUSTOMERS: each has a name, color, and list of parts
+let CUSTOMERS = [
+  {
+    id:'cust_0', name:'Electrolux',
+    color:'#1A5FAB', bg:'#E8F0FB', border:'#A8C3EF',
+    parts:[
+      {id:'A18028302',div:24,gw:285.00,cbm:0.88,dim:'990×990×900'},
+      {id:'A18028305',div:24,gw:260.00,cbm:0.88,dim:'990×990×900'},
+      {id:'A18028306',div:24,gw:262.00,cbm:0.88,dim:'990×990×900'},
+      {id:'A18028307',div:24,gw:260.00,cbm:0.88,dim:'990×990×900'},
+      {id:'A18028309',div:24,gw:325.00,cbm:0.88,dim:'990×990×900'},
+      {id:'A18994302',div:72,gw:345.00,cbm:0.64,dim:'1200×815×650'},
+      {id:'A22536301',div:72,gw:438.00,cbm:0.73,dim:'1175×960×650'},
+      {id:'A23349701',div:24,gw:256.00,cbm:0.88,dim:'990×990×900'},
+    ]
+  }
+];
+
+// Flat PARTS array rebuilt from CUSTOMERS (with custIdx + partColor assigned)
+let PARTS = [];
+const PART_COLORS = [
+  {color:'#3B6FD4',bg:'#EEF3FC',border:'#C2D3F5'},
+  {color:'#7C5FBF',bg:'#F3EFFE',border:'#CDBFF5'},
+  {color:'#C0587A',bg:'#FCEEF3',border:'#F0BECE'},
+  {color:'#9A6200',bg:'#FDF5E4',border:'#E8D090'},
+  {color:'#C0382B',bg:'#FCECEA',border:'#EDB5B0'},
+  {color:'#2A7D52',bg:'#EBF7F1',border:'#A8D9BF'},
+  {color:'#C07020',bg:'#FDF2E4',border:'#E8C090'},
+  {color:'#1A8A8A',bg:'#E6F7F7',border:'#9ADADA'},
+  {color:'#6B5EA8',bg:'#F0EEFB',border:'#C5BBEF'},
+  {color:'#A84E6B',bg:'#FAF0F4',border:'#E8B8CA'},
+];
+
+function rebuildParts(){
+  PARTS = [];
+  CUSTOMERS.forEach((cust,ci)=>{
+    if(!cust.parts) cust.parts = [];
+    cust.parts.forEach((p,pi)=>{
+      const clr = PART_COLORS[(PARTS.length) % PART_COLORS.length];
+      PARTS.push({...p, custIdx:ci, custPartIdx:pi, color:clr.color, bg:clr.bg, border:clr.border});
+    });
+  });
+}
+rebuildParts();
+
+const CTN_DEFS_BASE = [
+  {key:'40GP',label:'40GP / DC',spec:'67 CBM · 26,500 kg · ~48 PLT',maxCBM:67,maxKG:26500,cap:48,tare:3800,cls:'t0',emoji:'🔵',custom:false},
+  {key:'40HQ',label:'40HQ / HC',spec:'76 CBM · 26,000 kg · ~48 PLT',maxCBM:76,maxKG:26000,cap:48,tare:4000,cls:'t1',emoji:'🟢',custom:false},
+  {key:'20GP',label:'20GP / DC',spec:'33 CBM · 28,000 kg · ~24 PLT',maxCBM:33,maxKG:28000,cap:24,tare:2200,cls:'t2',emoji:'🟡',custom:false},
+];
+let CTN_DEFS = CTN_DEFS_BASE.map(d=>({...d}));
+// expose to window for cross-module access
+Object.defineProperty(window,'CTN_DEFS',{get:()=>CTN_DEFS,set:v=>{CTN_DEFS=v;}});
+
+/* state */
+let ctnCounts = {};
+Object.defineProperty(window,'ctnCounts',{get:()=>ctnCounts,set:v=>{ctnCounts=v;}});
+let containers = [];
+Object.defineProperty(window,'CUSTOMERS',{get:()=>CUSTOMERS,set:v=>{CUSTOMERS=v;}});
+let pool = {};
+let dragPartIdx = null;
+let dragSrcCtn = null;
+let appMode = 'fcl'; // 'fcl' | 'lcl'
+let lclSlots = []; // [{label, maxCBM, maxKG, maxPLT, cbmUsed, gwUsed, pltUsed}]
+
+/* ═══ CUSTOMER MANAGEMENT ═══ */
+const CUST_COLORS = [
+  {color:'#1A5FAB',bg:'#E8F0FB',border:'#A8C3EF'},
+  {color:'#2A7D52',bg:'#EBF7F1',border:'#A8D9BF'},
+  {color:'#9A6200',bg:'#FDF5E4',border:'#E8D090'},
+  {color:'#7C5FBF',bg:'#F3EFFE',border:'#CDBFF5'},
+  {color:'#C0382B',bg:'#FCECEA',border:'#EDB5B0'},
+  {color:'#1A8A8A',bg:'#E6F7F7',border:'#9ADADA'},
+];
+
+function addCustomer(){
+  const name = prompt('ชื่อลูกค้าใหม่:','');
+  if(!name||!name.trim()) return;
+  const ci = CUSTOMERS.length % CUST_COLORS.length;
+  CUSTOMERS.push({
+    id:'cust_'+Date.now(), name:name.trim(),
+    color:CUST_COLORS[ci].color, bg:CUST_COLORS[ci].bg, border:CUST_COLORS[ci].border,
+    parts:[]
+  });
+  fullRebuild();
+}
+
+function renameCustomer(ci){
+  const name = prompt('เปลี่ยนชื่อลูกค้า:', CUSTOMERS[ci].name);
+  if(!name||!name.trim()) return;
+  CUSTOMERS[ci].name = name.trim();
+  fullRebuild();
+}
+
+function deleteCustomer(ci){
+  if(!confirm(`ลบลูกค้า "${CUSTOMERS[ci].name}" และสินค้าทั้งหมด?`)) return;
+  CUSTOMERS.splice(ci,1);
+  fullRebuild();
+}
+
+function addPartToCustomer(ci){
+  const el = document.getElementById('part-form-'+ci);
+  if(!el) return;
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="custom-ctn-form">
+      <div class="cf-title">📦 เพิ่มรหัสสินค้าใหม่ — ข้อมูลที่ใช้คำนวณ</div>
+      <div class="cf-grid">
+        <div class="cf-field cf-full"><label>รหัสสินค้า (Part ID)</label><input id="pf-id-${ci}" placeholder="เช่น A12345678"></div>
+        <div class="cf-field"><label>PCS ต่อ PLT</label><input type="number" id="pf-div-${ci}" placeholder="เช่น 24" min="1" value="24"></div>
+        <div class="cf-field"><label>น้ำหนัก GW ต่อ PLT (kg)</label><input type="number" id="pf-gw-${ci}" placeholder="เช่น 260" min="0" step="0.01" value="260"></div>
+        <div class="cf-field"><label>CBM ต่อ PLT</label><input type="number" id="pf-cbm-${ci}" placeholder="เช่น 0.88" min="0" step="0.01" value="0.88"></div>
+        <div class="cf-field"><label>ขนาด (ก×ย×ส มม.)</label><input id="pf-dim-${ci}" placeholder="เช่น 990×990×900" value="990×990×900"></div>
+      </div>
+      <div style="font-size:9px;color:var(--ink3);margin:-2px 0 7px;line-height:1.5">
+        ค่าเหล่านี้ใช้คำนวณว่าสินค้านี้จะใส่ในตู้คอนเทนเนอร์ได้กี่พาเลท ตามขีดจำกัด CBM/น้ำหนักของตู้
+      </div>
+      <div class="cf-actions">
+        <button class="btn-cancel" onclick="hidePartForm(${ci})">ยกเลิก</button>
+        <button class="btn-confirm" onclick="confirmAddPart(${ci})">✓ เพิ่มสินค้า</button>
+      </div>
+    </div>`;
+  document.getElementById(`pf-id-${ci}`).focus();
+}
+
+function hidePartForm(ci){
+  const el = document.getElementById('part-form-'+ci);
+  if(!el) return;
+  el.style.display = 'none';
+  el.innerHTML = '';
+}
+
+function confirmAddPart(ci){
+  const id = document.getElementById(`pf-id-${ci}`).value.trim();
+  const div = parseInt(document.getElementById(`pf-div-${ci}`).value);
+  const gw = parseFloat(document.getElementById(`pf-gw-${ci}`).value);
+  const cbm = parseFloat(document.getElementById(`pf-cbm-${ci}`).value);
+  const dim = document.getElementById(`pf-dim-${ci}`).value.trim() || '990×990×900';
+  if(!id){ alert('กรุณากรอกรหัสสินค้า'); return; }
+  if(!div || div<1){ alert('กรุณากรอก PCS ต่อ PLT ให้ถูกต้อง'); return; }
+  if(!gw || gw<=0){ alert('กรุณากรอกน้ำหนัก GW ต่อ PLT ให้ถูกต้อง'); return; }
+  if(!cbm || cbm<=0){ alert('กรุณากรอก CBM ต่อ PLT ให้ถูกต้อง'); return; }
+  CUSTOMERS[ci].parts.push({id, div, gw, cbm, dim});
+  hidePartForm(ci);
+  fullRebuild();
+}
+
+function deletePartFromCustomer(ci, pi){
+  CUSTOMERS[ci].parts.splice(pi,1);
+  fullRebuild();
+}
+
+function toggleSpecInfo(fi){
+  const el = document.getElementById('spec'+fi);
+  if(!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function fullRebuild(){
+  // clear container items since part indices changed
+  containers = containers.map(c=>({...c,items:[]}));
+  pool = {};
+  rebuildParts();
+  buildPartInputs();
+  // reset all PCS inputs to 0 and recalc
+  PARTS.forEach((_,i)=>{
+    const el=document.getElementById('pcs'+i);
+    if(el) el.value=0;
+    const plt=document.getElementById('plt'+i);
+    if(plt) plt.value=0;
+    const chip=document.getElementById('chip'+i);
+    if(chip) chip.innerHTML='';
+    pool[i]=0;
+  });
+  document.getElementById('s-pcs').textContent='0';
+  document.getElementById('s-plt').textContent='0';
+  document.getElementById('s-gw').textContent='0';
+  document.getElementById('s-cbm').textContent='0.00';
+  recalcPool(); renderPool(); renderContainers();
+  if(appMode==='lcl') renderLclZones();
+}
+
+/* ═══ INIT ═══ */
+let custCollapsed = {}; // {ci: true/false}
+
+let savedPcs = {}; // {flatIdx: pcsValue} — persists across buildPartInputs calls
+
+function toggleCust(ci){
+  // save current PCS values before rebuilding
+  PARTS.forEach((_,i)=>{ const el=document.getElementById('pcs'+i); if(el) savedPcs[i]=parseInt(el.value)||0; });
+  custCollapsed[ci] = !custCollapsed[ci];
+  buildPartInputs();
+  // restore PCS values
+  PARTS.forEach((_,i)=>{ const el=document.getElementById('pcs'+i); if(el) el.value=savedPcs[i]||0; });
+  onPcsChange();
+}
+
+function buildPartInputs(){
+  const el = document.getElementById('part-inputs');
+  if(!CUSTOMERS.length){
+    el.innerHTML='<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px 0">ยังไม่มีลูกค้า<br>กดปุ่มด้านล่างเพื่อเพิ่ม</div>';
+    return;
+  }
+  rebuildParts();
+  let html='';
+  let flatIdx=0;
+  CUSTOMERS.forEach((cust,ci)=>{
+    const collapsed = !!custCollapsed[ci];
+    const arrow = collapsed ? '▶' : '▼';
+    const partCount = cust.parts.length;
+    const pltTotal = cust.parts.reduce((s,p)=>{
+      const pcs = parseInt((document.getElementById('pcs'+(flatIdx+ cust.parts.indexOf(p)))||{}).value)||0;
+      return s+(pcs>0?Math.ceil(pcs/p.div):0);
+    },0);
+    // compute flatIdx start for this customer
+    let custFlatStart = 0;
+    CUSTOMERS.slice(0,ci).forEach(c=>custFlatStart+=c.parts.length);
+
+    html+=`<div style="margin-bottom:8px;border:1px solid ${cust.border};border-radius:var(--r-sm);overflow:hidden">
+      <div onclick="toggleCust(${ci})" style="display:flex;align-items:center;gap:6px;padding:7px 9px;background:${cust.bg};cursor:pointer;user-select:none;transition:opacity .1s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        <span style="font-size:9px;color:${cust.color};width:10px;flex-shrink:0;font-weight:700;transition:transform .2s">${arrow}</span>
+        <div style="width:8px;height:8px;border-radius:50%;background:${cust.color};flex-shrink:0"></div>
+        <span style="font-size:11px;font-weight:600;color:${cust.color};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cust.name}</span>
+        <span style="font-size:10px;color:${cust.color};opacity:.6;font-family:'DM Mono',monospace;flex-shrink:0">${partCount} รายการ</span>
+        <button onclick="event.stopPropagation();addPartToCustomer(${ci})" title="เพิ่มสินค้า" style="border:none;background:transparent;cursor:pointer;font-size:13px;padding:2px 3px;color:${cust.color};opacity:.7;line-height:1" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">＋</button>
+        <button onclick="event.stopPropagation();renameCustomer(${ci})" title="เปลี่ยนชื่อ" style="border:none;background:transparent;cursor:pointer;font-size:11px;padding:2px;color:var(--ink3);line-height:1" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--ink3)'">✏️</button>
+        <button onclick="event.stopPropagation();deleteCustomer(${ci})" title="ลบลูกค้า" style="border:none;background:transparent;cursor:pointer;font-size:11px;padding:2px;color:var(--ink3);line-height:1" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--ink3)'">🗑</button>
+      </div>
+      <div style="display:${collapsed?'none':'block'};padding:6px 6px 4px">`;
+
+    if(!cust.parts.length){
+      html+=`<div style="font-size:10px;color:var(--ink3);padding:8px 10px;border:1px dashed var(--border);border-radius:var(--r-xs);text-align:center">ยังไม่มีสินค้า — กด ＋ เพื่อเพิ่ม</div>`;
+    } else {
+      cust.parts.forEach((p,pi)=>{
+        const fi = custFlatStart + pi;
+        const fp = PARTS[fi];
+        html+=`<div class="part-card" style="border-left:3px solid ${fp.color};margin-bottom:5px">
+          <div class="part-top">
+            <span class="part-badge" style="color:${fp.color};background:${fp.bg};border-color:${fp.border}">${p.id}</span>
+            <span class="part-info" style="flex:1">${p.div}/PLT · ${p.dim}</span>
+            <button onclick="toggleSpecInfo(${fi})" title="ข้อมูล spec" style="border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--ink3);padding:0 3px;border-radius:3px;line-height:1" onmouseover="this.style.color='${fp.color}'" onmouseout="this.style.color='var(--ink3)'">ⓘ</button>
+            <button onclick="deletePartFromCustomer(${ci},${pi})" style="border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--ink3);padding:0 2px;border-radius:3px;line-height:1" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--ink3)'" title="ลบสินค้า">×</button>
+          </div>
+          <div id="spec${fi}" style="display:none;font-size:9px;color:${fp.color};background:${fp.bg};border-radius:5px;padding:4px 7px;margin:0 0 5px;line-height:1.6;font-family:'DM Mono',monospace">
+            ${p.div} PCS/PLT · ${p.dim} mm · ${p.gw} kg/PLT · ${p.cbm} CBM/PLT
+          </div>
+          <div class="part-fields">
+            <div class="f"><label>PCS</label><input type="number" id="pcs${fi}" value="0" min="0" oninput="onPcsChange()"></div>
+            <div class="f"><label>PLT</label><input class="ro" id="plt${fi}" readonly value="0"></div>
+          </div>
+          <div id="chip${fi}"></div>
+        </div>`;
+      });
+    }
+    html+=`<div id="part-form-${ci}" style="display:none"></div></div></div>`;
+    flatIdx += cust.parts.length;
+  });
+  el.innerHTML = html;
+}
+
+function buildCtnTypeGrid(){
+  const base = CTN_DEFS_BASE;
+  const customs = CTN_DEFS.filter(d=>d.custom);
+  let html = base.map((c,i)=>`
+    <div class="ctn-type-row-item">
+      <div class="ctn-icon-box" style="background:${i===0?'#EEF3FC':i===1?'#EBF7F1':'#FDF5E4'}">${c.emoji}</div>
+      <div class="ctn-type-info">
+        <div class="ctn-type-name">${c.label}</div>
+        <div class="ctn-type-spec">${c.spec}</div>
+      </div>
+      <div class="ctn-counter">
+        <button onclick="chgCtnCount(${i},-1)">−</button>
+        <em id="cc${i}">0</em>
+        <button onclick="chgCtnCount(${i},1)">+</button>
+      </div>
+    </div>`).join('');
+  customs.forEach((c,j)=>{
+    const i = CTN_DEFS_BASE.length + j;
+    html += `
+    <div class="ctn-type-row-item">
+      <div class="ctn-icon-box" style="background:#F3EFFE">⚙️</div>
+      <div class="ctn-type-info">
+        <div class="ctn-type-name">${c.label}<span class="custom-badge">Custom</span></div>
+        <div class="ctn-type-spec">${c.maxCBM} CBM · ${c.maxKG.toLocaleString()} kg · ~${c.cap} PLT</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <div class="ctn-counter">
+          <button onclick="chgCtnCount(${i},-1)">−</button>
+          <em id="cc${i}">0</em>
+          <button onclick="chgCtnCount(${i},1)">+</button>
+        </div>
+        <button class="del-ctn-btn" onclick="deleteCustomCtn(${j})" title="ลบตู้นี้">🗑</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('ctn-type-grid').innerHTML = html;
+  // init counts
+  CTN_DEFS_BASE.forEach((_,i)=>{ if(ctnCounts[i]===undefined) ctnCounts[i]=0; });
+  ctnCounts[0] = ctnCounts[0]||2;
+  CTN_DEFS_BASE.forEach((_,i)=>{ const el=document.getElementById('cc'+i); if(el) el.textContent=ctnCounts[i]||0; });
+  customs.forEach((_,j)=>{ const i=CTN_DEFS_BASE.length+j; const el=document.getElementById('cc'+i); if(el) el.textContent=ctnCounts[i]||0; });
+}
+
+/* ═══ CUSTOM CONTAINER ═══ */
+function showCustomForm(){
+  const el = document.getElementById('custom-ctn-form');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="custom-ctn-form">
+      <div class="cf-title">⚙️ เพิ่มตู้ขนาดเอง</div>
+      <div class="cf-grid">
+        <div class="cf-field cf-full"><label>ชื่อตู้ (เช่น 45HC, 20RF)</label><input id="cf-name" placeholder="ชื่อตู้" value=""></div>
+        <div class="cf-field"><label>CBM สูงสุด</label><input type="number" id="cf-cbm" placeholder="เช่น 86" min="1"></div>
+        <div class="cf-field"><label>น้ำหนักสูงสุด (kg)</label><input type="number" id="cf-kg" placeholder="เช่น 26500" min="1"></div>
+        <div class="cf-field"><label>พาเลท (PLT) สูงสุด</label><input type="number" id="cf-plt" placeholder="เช่น 56" min="1"></div>
+        <div class="cf-field"><label>Tare Weight (kg)</label><input type="number" id="cf-tare" placeholder="เช่น 4000" min="0" value="4000"></div>
+      </div>
+      <div class="cf-actions">
+        <button class="btn-cancel" onclick="hideCustomForm()">ยกเลิก</button>
+        <button class="btn-confirm" onclick="addCustomCtn()">✓ เพิ่มตู้</button>
+      </div>
+    </div>`;
+  document.getElementById('cf-name').focus();
+}
+
+function hideCustomForm(){
+  document.getElementById('custom-ctn-form').style.display = 'none';
+  document.getElementById('custom-ctn-form').innerHTML = '';
+}
+
+function addCustomCtn(){
+  const name = document.getElementById('cf-name').value.trim() || 'Custom';
+  const cbm = parseFloat(document.getElementById('cf-cbm').value);
+  const kg = parseFloat(document.getElementById('cf-kg').value);
+  const plt = parseInt(document.getElementById('cf-plt').value);
+  const tare = parseFloat(document.getElementById('cf-tare').value)||0;
+  if(!cbm||!kg||!plt){ alert('กรุณากรอก CBM, น้ำหนัก และ PLT ให้ครบ'); return; }
+  const colors = ['#7C5FBF','#C0587A','#1A8A8A','#C07020','#C0382B'];
+  const bgs = ['#F3EFFE','#FCEEF3','#E6F7F7','#FDF2E4','#FCECEA'];
+  const borders = ['#CDBFF5','#F0BECE','#9ADADA','#E8C090','#EDB5B0'];
+  const ci = CTN_DEFS.filter(d=>d.custom).length % 5;
+  CTN_DEFS.push({
+    key:'CUSTOM_'+Date.now(), label:name, spec:`${cbm} CBM · ${kg.toLocaleString()} kg · ~${plt} PLT`,
+    maxCBM:cbm, maxKG:kg, cap:plt, tare, cls:'t0', emoji:'⚙️', custom:true,
+    color:colors[ci], bg:bgs[ci], border:borders[ci]
+  });
+  hideCustomForm();
+  buildCtnTypeGrid();
+  rebuildContainers();
+  updateCtnSummary();
+  recalcPool(); renderPool(); renderContainers();
+}
+
+function deleteCustomCtn(customIdx){
+  const defIdx = CTN_DEFS_BASE.length + customIdx;
+  CTN_DEFS.splice(defIdx, 1);
+  delete ctnCounts[defIdx];
+  // re-key counts for remaining customs
+  const newCounts = {};
+  CTN_DEFS_BASE.forEach((_,i)=>{ newCounts[i]=ctnCounts[i]||0; });
+  CTN_DEFS.filter(d=>d.custom).forEach((_,j)=>{
+    const i=CTN_DEFS_BASE.length+j;
+    const oldI=i>defIdx?i+1:i;
+    newCounts[i]=ctnCounts[oldI]||0;
+  });
+  ctnCounts=newCounts;
+  buildCtnTypeGrid();
+  rebuildContainers();
+  updateCtnSummary();
+  recalcPool(); renderPool(); renderContainers();
+}
+
+/* ═══ FCL / LCL MODE ═══ */
+function setMode(mode){
+  appMode = mode;
+  document.getElementById('tab-fcl').className='mode-tab'+(mode==='fcl'?' active-fcl':'');
+  document.getElementById('tab-lcl').className='mode-tab'+(mode==='lcl'?' active-lcl':'');
+  document.getElementById('fcl-section').style.display = mode==='fcl'?'block':'none';
+  document.getElementById('lcl-section').style.display = mode==='lcl'?'block':'none';
+  document.getElementById('fcl-zones').style.display = mode==='fcl'?'block':'none';
+  document.getElementById('lcl-zones').style.display = mode==='lcl'?'block':'none';
+  if(mode==='lcl'){
+    if(!lclSlots.length) addLclSlot();
+    renderLclSection();
+    renderLclZones();
+    document.getElementById('ctn-zone-label').textContent = lclSlots.length+' shipment';
+  } else {
+    updateCtnSummary();
+  }
+}
+
+/* lclSlots = [{label, maxCBM, maxKG, maxPLT, items:[{partIdx,count}]}] */
+function addLclSlot(){
+  lclSlots.push({label:'LCL Shipment '+(lclSlots.length+1), maxCBM:0, maxKG:0, maxPLT:0, items:[]});
+  renderLclSection();
+  renderLclZones();
+  if(appMode==='lcl') document.getElementById('ctn-zone-label').textContent=lclSlots.length+' shipment';
+}
+
+function removeLclSlot(i){
+  // return items to pool
+  lclSlots[i].items.forEach(it=>{ pool[it.partIdx]=(pool[it.partIdx]||0)+it.count; });
+  lclSlots.splice(i,1);
+  recalcLclPool(); renderPool(); renderLclSection(); renderLclZones();
+  if(appMode==='lcl') document.getElementById('ctn-zone-label').textContent=lclSlots.length+' shipment';
+}
+
+function lclUpdate(i,field,val){
+  lclSlots[i][field]=val;
+  renderLclZones();
+}
+
+/* recalcPool for LCL mode — deducts from lclSlots items */
+function recalcLclPool(){
+  PARTS.forEach((_,i)=>{
+    const el=document.getElementById('plt'+i);
+    pool[i] = el ? (parseInt(el.value)||0) : (savedPcs[i] ? Math.ceil(savedPcs[i]/PARTS[i].div) : 0);
+  });
+  lclSlots.forEach(s=>s.items.forEach(it=>{ pool[it.partIdx]=(pool[it.partIdx]||0)-it.count; }));
+}
+
+function lclCalcFit(si, pi, want){
+  const s=lclSlots[si]; const p=PARTS[pi];
+  const mCBM=s.maxCBM||Infinity, mKG=s.maxKG||Infinity, mPLT=s.maxPLT||Infinity;
+  const curGW=s.items.reduce((a,it)=>a+PARTS[it.partIdx].gw*it.count,0);
+  const curCBM=s.items.reduce((a,it)=>a+PARTS[it.partIdx].cbm*it.count,0);
+  const curPlt=s.items.reduce((a,it)=>a+it.count,0);
+  const already=(s.items.find(it=>it.partIdx===pi)||{count:0}).count;
+  const byKG=  mKG===Infinity?want : Math.floor((mKG -curGW +already*p.gw)/p.gw);
+  const byCBM= mCBM===Infinity?want : Math.floor((mCBM-curCBM+already*p.cbm)/p.cbm);
+  const byPlt= mPLT===Infinity?want : mPLT-curPlt+already;
+  return Math.min(want, Math.max(0, Math.min(byKG, byCBM, byPlt)));
+}
+
+function lclAddItem(si,pi,count){
+  const ex=lclSlots[si].items.find(it=>it.partIdx===pi);
+  if(ex) ex.count+=count; else lclSlots[si].items.push({partIdx:pi,count});
+}
+
+function lclRemoveItem(si,pi){
+  const s=lclSlots[si];
+  const it=s.items.find(x=>x.partIdx===pi);
+  if(it){ pool[pi]=(pool[pi]||0)+it.count; s.items=s.items.filter(x=>x.partIdx!==pi); }
+  recalcLclPool(); renderPool(); renderLclZones();
+}
+
+function onLclDrop(e,si){
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  document.querySelectorAll('.dob').forEach(el=>el.classList.remove('dob'));
+  const pi=dragPartIdx2; if(pi===null||pi===undefined) return;
+  let want=0;
+  // from pool
+  if(dragSrcCtn2===null && dragSrcLcl2===null){
+    want=pool[pi]||0; if(!want){dragPartIdx2=null;return;} pool[pi]=0;
+  }
+  // from another lcl slot
+  else if(dragSrcLcl2!==null && dragSrcLcl2!==si){
+    const src=lclSlots[dragSrcLcl2].items;
+    const idx=src.findIndex(it=>it.partIdx===pi);
+    if(idx>=0){want=src[idx].count;src.splice(idx,1);}
+  }
+  // from fcl container → to lcl
+  else if(dragSrcCtn2!==null){
+    const src=containers[dragSrcCtn2].items;
+    const idx=src.findIndex(it=>it.partIdx===pi);
+    if(idx>=0){want=src[idx].count;src.splice(idx,1);}
+  }
+  if(want>0){
+    const accepted=lclCalcFit(si,pi,want);
+    const rejected=want-accepted;
+    if(accepted>0) lclAddItem(si,pi,accepted);
+    if(rejected>0){ pool[pi]=(pool[pi]||0)+rejected; showToast(PARTS[pi].id,rejected); }
+  }
+  dragPartIdx2=null; dragSrcCtn2=null; dragSrcLcl2=null;
+  recalcLclPool(); renderPool(); renderLclZones();
+}
+
+function onLclTagDragStart(e,pi,si){
+  dragPartIdx2=pi; dragSrcCtn2=null; dragSrcLcl2=si;
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>{ const el=document.getElementById('lclptag-'+si+'-'+pi); if(el)el.classList.add('dragging'); },0);
+}
+
+function lclMoveBack(si,pi,sign){
+  if(sign===1){ // remove 1 PLT from slot si
+    const it=lclSlots[si].items.find(x=>x.partIdx===pi);
+    if(it){ it.count--; if(!it.count) lclSlots[si].items=lclSlots[si].items.filter(x=>x.partIdx!==pi); }
+  }
+  recalcLclPool(); renderPool(); renderLclZones();
+}
+
+function renderLclSection(){
+  const el=document.getElementById('lcl-section');
+  el.innerHTML=lclSlots.map((s,i)=>`
+    <div style="border:1px solid var(--amber-border);border-radius:var(--r-sm);background:var(--amber-bg);padding:10px 11px;margin-bottom:6px;animation:slideIn .15s ease">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:600;color:var(--amber);flex:1">${s.label}</span>
+        ${lclSlots.length>1?`<button class="del-ctn-btn" onclick="removeLclSlot(${i})" title="ลบ">🗑</button>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <div class="cf-field">
+          <label style="font-size:10px;color:var(--ink3);display:block;margin-bottom:3px;font-weight:500">ชื่อ / Label</label>
+          <input style="width:100%;border:1px solid var(--border);border-radius:var(--r-xs);padding:5px 7px;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface);outline:none;transition:border-color .2s" value="${s.label}" oninput="lclSlots[${i}].label=this.value;renderLclZones()" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div class="cf-field">
+          <label style="font-size:10px;color:var(--ink3);display:block;margin-bottom:3px;font-weight:500">CBM ที่ได้รับ</label>
+          <input type="number" style="width:100%;border:1px solid var(--border);border-radius:var(--r-xs);padding:5px 7px;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface);outline:none;transition:border-color .2s" placeholder="ไม่จำกัด" value="${s.maxCBM||''}" oninput="lclUpdate(${i},'maxCBM',parseFloat(this.value)||0)" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div class="cf-field">
+          <label style="font-size:10px;color:var(--ink3);display:block;margin-bottom:3px;font-weight:500">GW สูงสุด (kg)</label>
+          <input type="number" style="width:100%;border:1px solid var(--border);border-radius:var(--r-xs);padding:5px 7px;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface);outline:none;transition:border-color .2s" placeholder="ไม่จำกัด" value="${s.maxKG||''}" oninput="lclUpdate(${i},'maxKG',parseFloat(this.value)||0)" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div class="cf-field">
+          <label style="font-size:10px;color:var(--ink3);display:block;margin-bottom:3px;font-weight:500">PLT สูงสุด</label>
+          <input type="number" style="width:100%;border:1px solid var(--border);border-radius:var(--r-xs);padding:5px 7px;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface);outline:none;transition:border-color .2s" placeholder="ไม่จำกัด" value="${s.maxPLT||''}" oninput="lclUpdate(${i},'maxPLT',parseInt(this.value)||0)" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+      </div>
+    </div>`).join('')
+  + `<button class="add-ctn-btn" onclick="addLclSlot()">＋ เพิ่ม LCL Shipment</button>`;
+}
+
+function renderLclZones(){
+  const el=document.getElementById('lcl-ctn-zones');
+  if(!lclSlots.length){el.innerHTML='<div class="drop-hint">เพิ่ม LCL Shipment ด้านซ้าย</div>';return;}
+  const barClr=(pct)=>pct>100?'#C0382B':pct>85?'#9A6200':'#9A6200';
+  el.innerHTML=lclSlots.map((s,si)=>{
+    const items=s.items;
+    const totGW=items.reduce((a,it)=>a+PARTS[it.partIdx].gw*it.count,0);
+    const totCBM=items.reduce((a,it)=>a+PARTS[it.partIdx].cbm*it.count,0);
+    const totPlt=items.reduce((a,it)=>a+it.count,0);
+    const mCBM=s.maxCBM||0, mKG=s.maxKG||0, mPLT=s.maxPLT||0;
+    const hasCap=mCBM||mKG||mPLT;
+    const pCBM=mCBM?Math.min(110,+(totCBM/mCBM*100).toFixed(1)):0;
+    const pGW= mKG ?Math.min(110,+(totGW/mKG*100).toFixed(1)):0;
+    const pPlt=mPLT?Math.min(110,+(totPlt/mPLT*100).toFixed(1)):0;
+    const over=hasCap&&(pCBM>100||pGW>100||pPlt>100);
+    const warn=!over&&hasCap&&(pCBM>85||pGW>85||pPlt>85);
+    const clamp=v=>Math.min(100,v);
+    const spCls=over?'sp-over':warn?'sp-warn':'sp-ok';
+    const spTxt=over?'OVER':warn?'NEAR FULL':'OK';
+
+    const tagHtml=items.length
+      ? items.map(it=>{const p=PARTS[it.partIdx]; return `
+          <span class="ctn-plt-tag" id="lclptag-${si}-${it.partIdx}" draggable="true"
+            ondragstart="onLclTagDragStart(event,${it.partIdx},${si})">
+            <span class="ctn-plt-dot" style="background:${p.color}"></span>
+            <span style="color:${p.color};font-weight:600">${p.id.slice(-4)}</span>
+            <span>${it.count} PLT</span>
+            <button class="rm" onclick="lclRemoveItem(${si},${it.partIdx})">×</button>
+          </span>`;}).join('')
+      : '<div class="drop-hint">ลากพาเลทมาวางที่นี่</div>';
+
+    return `<div class="lcl-zone${over?' is-over':''}" id="lclzone-${si}"
+        ondragover="event.preventDefault();this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="onLclDrop(event,${si})">
+      <div class="lcl-hdr">
+        <div class="ctn-num t2">${si+1}</div>
+        <div class="ctn-hdr-text">
+          <div class="ctn-hdr-name">${s.label}</div>
+          <div class="ctn-hdr-spec">${mCBM?mCBM+' CBM':'∞'} · ${mKG?mKG.toLocaleString()+' kg':'∞'} · ${mPLT?'~'+mPLT+' PLT':'∞'}</div>
+        </div>
+        <span class="lcl-badge" style="margin-left:auto">LCL</span>
+        <span class="sp ${spCls}" style="margin-left:6px">${spTxt}</span>
+      </div>
+      <div class="ctn-meters">
+        <div>
+          <div class="mr"><span class="mn">CBM</span><span class="mv">${totCBM.toFixed(2)}${mCBM?' / '+mCBM+' ('+pCBM+'%)':''}</span></div>
+          ${mCBM?`<div class="mtrack"><div class="mfill" style="width:${clamp(pCBM)}%;background:${barClr(pCBM)}"></div></div>`:''}
+        </div>
+        <div>
+          <div class="mr"><span class="mn">GW</span><span class="mv">${totGW.toFixed(0)} kg${mKG?' / '+mKG.toLocaleString()+' ('+pGW+'%)':''}</span></div>
+          ${mKG?`<div class="mtrack"><div class="mfill" style="width:${clamp(pGW)}%;background:${barClr(pGW)}"></div></div>`:''}
+        </div>
+        <div>
+          <div class="mr"><span class="mn">PLT</span><span class="mv">${totPlt}${mPLT?' / '+mPLT+' ('+pPlt+'%)':''}</span></div>
+          ${mPLT?`<div class="mtrack"><div class="mfill" style="width:${clamp(pPlt)}%;background:${barClr(pPlt)}"></div></div>`:''}
+        </div>
+      </div>
+      <div class="ctn-body" id="lclbody-${si}"
+        ondragover="event.preventDefault();this.classList.add('dob')"
+        ondragleave="this.classList.remove('dob')"
+        ondrop="onLclDrop(event,${si})">${tagHtml}</div>
+      <div class="ctn-foot">
+        <strong>${totPlt} PLT · ${totGW.toFixed(0)} kg · ${totCBM.toFixed(2)} CBM</strong>
+        <span style="color:var(--amber);font-weight:500;font-size:11px">LCL</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
+function rebuildContainers(){
+  // build flat list: [typeIdx repeated by count]
+  const newList = [];
+  CTN_DEFS.forEach((_,ti)=>{
+    for(let n=0;n<(ctnCounts[ti]||0);n++) newList.push(ti);
+  });
+  // preserve existing items where possible
+  const newContainers = newList.map((ti,ci)=>{
+    const old = containers[ci];
+    return {typeIdx:ti, items: (old&&old.typeIdx===ti) ? old.items : []};
+  });
+  containers = newContainers;
+}
+
+function chgCtnCount(ti, d){
+  ctnCounts[ti] = Math.max(0, (ctnCounts[ti]||0)+d);
+  document.getElementById('cc'+ti).textContent = ctnCounts[ti];
+  rebuildContainers();
+  updateCtnSummary();
+  recalcPool();
+  renderPool();
+  renderContainers();
+}
+
+function updateCtnSummary(){
+  const parts = CTN_DEFS.map((c,i)=>{
+    const n = ctnCounts[i]||0;
+    return n>0 ? `<strong>${n} × ${c.label}</strong>` : null;
+  }).filter(Boolean);
+  const total = CTN_DEFS.reduce((s,_,i)=>s+(ctnCounts[i]||0),0);
+  document.getElementById('ctn-summary').innerHTML = parts.length
+    ? parts.join(' &nbsp;+&nbsp; ') + ` &nbsp;= <strong>${total} ตู้</strong>`
+    : 'เลือกจำนวนตู้ด้านบน';
+  document.getElementById('ctn-zone-label').textContent = total ? total+' ตู้' : '';
+}
+
+/* ═══ PCS INPUT ═══ */
+function onPcsChange(){
+  let totPcs=0,totPlt=0,totGW=0,totCBM=0;
+  PARTS.forEach((p,i)=>{
+    const inputEl=document.getElementById('pcs'+i);
+    const pcs = inputEl ? (parseInt(inputEl.value)||0) : (savedPcs[i]||0);
+    if(inputEl) savedPcs[i]=pcs;
+    const plt=pcs>0?Math.ceil(pcs/p.div):0;
+    const pltEl=document.getElementById('plt'+i); if(pltEl) pltEl.value=plt;
+    const chip=document.getElementById('chip'+i);
+    if(chip){
+      if(plt>0) chip.innerHTML=`<span class="plt-chip">📦 ${plt} PLT · ${(plt*p.gw).toFixed(0)} kg · ${(plt*p.cbm).toFixed(2)} CBM</span>`;
+      else chip.innerHTML='';
+    }
+    totPcs+=pcs; totPlt+=plt; totGW+=plt*p.gw; totCBM+=plt*p.cbm;
+    pool[i]=plt;
+  });
+  document.getElementById('s-pcs').textContent=totPcs.toLocaleString();
+  document.getElementById('s-plt').textContent=totPlt;
+  document.getElementById('s-gw').textContent=totGW.toFixed(0);
+  document.getElementById('s-cbm').textContent=totCBM.toFixed(2);
+  containers.forEach(ctn=>{
+    if(!ctn.items) ctn.items=[];
+    ctn.items=ctn.items.map(it=>({...it,count:Math.min(it.count,pool[it.partIdx]||0)})).filter(it=>it.count>0);
+  });
+  lclSlots.forEach(s=>{
+    if(!s.items) s.items=[];
+    s.items=s.items.map(it=>({...it,count:Math.min(it.count, (()=>{const el=document.getElementById('plt'+it.partIdx); return el?parseInt(el.value)||0:savedPcs[it.partIdx]?Math.ceil(savedPcs[it.partIdx]/PARTS[it.partIdx].div):0;})())})).filter(it=>it.count>0);
+  });
+  recalcPool(); renderPool(); renderContainers();
+  if(appMode==='lcl') renderLclZones();
+}
+
+/* ═══ POOL ═══ */
+function recalcPool(){
+  PARTS.forEach((_,i)=>{
+    const el=document.getElementById('plt'+i);
+    pool[i] = el ? (parseInt(el.value)||0) : (savedPcs[i] ? Math.ceil(savedPcs[i]/PARTS[i].div) : 0);
+  });
+  if(appMode==='lcl'){
+    lclSlots.forEach(s=>s.items.forEach(it=>{ pool[it.partIdx]=(pool[it.partIdx]||0)-it.count; }));
+  } else {
+    containers.forEach(ctn=>ctn.items.forEach(it=>{ pool[it.partIdx]=(pool[it.partIdx]||0)-it.count; }));
+  }
+}
+
+function renderPool(){
+  const el=document.getElementById('pallet-pool');
+  const entries=Object.entries(pool).filter(([_,v])=>v>0);
+  const total=entries.reduce((s,[_,v])=>s+v,0);
+  document.getElementById('pool-label').textContent=total+' PLT';
+  if(!entries.length){ el.innerHTML='<div class="empty-pool">✅ จัดพาเลทลงตู้ครบแล้ว</div>'; return; }
+  el.innerHTML=entries.map(([pi,cnt])=>{
+    const p=PARTS[pi];
+    return `<div class="pallet-chip" id="pool-${pi}" draggable="true"
+      ondragstart="onDragStart(event,${pi},null)"
+      style="border-left:3px solid ${p.color}">
+      <div class="p-icon" style="background:${p.bg}">${getPartEmoji(+pi)}</div>
+      <div class="p-detail">
+        <div class="p-name" style="color:${p.color}">${p.id}</div>
+        <div class="p-sub">${p.dim} · ${p.gw}kg/PLT</div>
+      </div>
+      <span class="p-cnt" style="color:${p.color}">${cnt}</span>
+      <div class="p-adj">
+        <button onclick="moveBack(${pi},1)">+</button>
+        <button onclick="moveBack(${pi},-1)">−</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getPartEmoji(i){ return ['📦','📦','📦','📦','📦','🗂','🗂','📦'][i]||'📦'; }
+
+/* ═══ DRAG ═══ */
+let dragPartIdx2=null, dragSrcCtn2=null, dragSrcLcl2=null;
+function onDragStart(e,pi,fromCtn){
+  dragPartIdx2=pi; dragSrcCtn2=fromCtn; dragSrcLcl2=null;
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>{ const el=document.getElementById(fromCtn!==null?'ptag-'+fromCtn+'-'+pi:'pool-'+pi); if(el)el.classList.add('dragging'); },0);
+}
+document.addEventListener('dragend',()=>{ document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging')); });
+
+function onDrop(e,ci){
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  document.querySelectorAll('.dob').forEach(el=>el.classList.remove('dob'));
+  const pi=dragPartIdx2; if(pi===null||pi===undefined) return;
+  let want=0;
+  if(dragSrcCtn2!==null && dragSrcCtn2!==ci){
+    const src=containers[dragSrcCtn2].items;
+    const idx=src.findIndex(it=>it.partIdx===pi);
+    if(idx>=0){ want=src[idx].count; src.splice(idx,1); }
+  } else if(dragSrcCtn2===null && dragSrcLcl2===null){
+    want=pool[pi]||0;
+    if(!want){dragPartIdx2=null;return;}
+    pool[pi]=0;
+  }
+  if(want>0){
+    const accepted=calcFit(ci,pi,want);
+    const rejected=want-accepted;
+    if(accepted>0) addItem(ci,pi,accepted);
+    if(rejected>0){ pool[pi]=(pool[pi]||0)+rejected; showToast(PARTS[pi].id,rejected); }
+  }
+  dragPartIdx2=null; dragSrcCtn2=null; dragSrcLcl2=null;
+  recalcPool(); renderPool(); renderContainers();
+  if(document.getElementById('view-infographic').style.display==='block') renderInfo();
+}
+
+function calcFit(ci,pi,want){
+  const ctn=CTN_DEFS[containers[ci].typeIdx];
+  const p=PARTS[pi];
+  const items=containers[ci].items;
+  const curGW=items.reduce((s,it)=>s+PARTS[it.partIdx].gw*it.count,0);
+  const curCBM=items.reduce((s,it)=>s+PARTS[it.partIdx].cbm*it.count,0);
+  const curPlt=items.reduce((s,it)=>s+it.count,0);
+  const already=(items.find(it=>it.partIdx===pi)||{count:0}).count;
+  const byKG=Math.floor((ctn.maxKG-curGW+already*p.gw)/p.gw);
+  const byCBM=Math.floor((ctn.maxCBM-curCBM+already*p.cbm)/p.cbm);
+  const byPlt=ctn.cap-curPlt+already;
+  return Math.min(want,Math.max(0,Math.min(byKG,byCBM,byPlt)));
+}
+
+function addItem(ci,pi,count){
+  const ex=containers[ci].items.find(it=>it.partIdx===pi);
+  if(ex) ex.count+=count;
+  else containers[ci].items.push({partIdx:pi,count});
+}
+
+function removeFromCtn(ci,pi){
+  containers[ci].items=containers[ci].items.filter(it=>it.partIdx!==pi);
+  recalcPool(); renderPool(); renderContainers();
+}
+
+function moveBack(pi,sign){
+  if(sign===1){
+    for(let ci=containers.length-1;ci>=0;ci--){
+      const item=containers[ci].items.find(it=>it.partIdx===pi);
+      if(item){ item.count--; if(!item.count) containers[ci].items=containers[ci].items.filter(it=>it.partIdx!==pi); break; }
+    }
+  }
+  recalcPool(); renderPool(); renderContainers();
+}
+
+/* ═══ RENDER CONTAINERS ═══ */
+function renderContainers(){
+  const el=document.getElementById('ctn-zones');
+  if(!containers.length){ el.innerHTML='<div class="drop-hint">เพิ่มตู้ด้านซ้ายก่อนค่ะ</div>'; return; }
+  el.innerHTML=containers.map((ctn,ci)=>{
+    const def=CTN_DEFS[ctn.typeIdx];
+    const items=ctn.items;
+    const totGW=items.reduce((s,it)=>s+PARTS[it.partIdx].gw*it.count,0);
+    const totCBM=items.reduce((s,it)=>s+PARTS[it.partIdx].cbm*it.count,0);
+    const totPlt=items.reduce((s,it)=>s+it.count,0);
+    const pCBM=Math.min(110,+(totCBM/def.maxCBM*100).toFixed(1));
+    const pGW=Math.min(110,+(totGW/def.maxKG*100).toFixed(1));
+    const pPlt=Math.min(110,+(totPlt/def.cap*100).toFixed(1));
+    const clamp=v=>Math.min(100,v);
+    const over=pCBM>100||pGW>100||pPlt>100;
+    const warn=!over&&(pCBM>85||pGW>85);
+    const spCls=over?'sp-over':warn?'sp-warn':'sp-ok';
+    const spTxt=over?'OVER':warn?'NEAR FULL':'OK';
+    const barClr=pct=>pct>100?'#C0382B':pct>85?'#9A6200':ctn.typeIdx===0?'#3B6FD4':ctn.typeIdx===1?'#2A7D52':'#9A6200';
+    const tagHtml=items.length
+      ? items.map(it=>{const p=PARTS[it.partIdx]; return `
+        <span class="ctn-plt-tag" id="ptag-${ci}-${it.partIdx}" draggable="true"
+          ondragstart="onDragStart(event,${it.partIdx},${ci})">
+          <span class="ctn-plt-dot" style="background:${p.color}"></span>
+          <span style="color:${p.color};font-weight:600">${p.id.slice(-4)}</span>
+          <span>${it.count} PLT</span>
+          <button class="rm" onclick="removeFromCtn(${ci},${it.partIdx})">×</button>
+        </span>`;}).join('')
+      : '<div class="drop-hint">ลากพาเลทมาวางที่นี่</div>';
+
+    return `<div class="ctn-zone${over?' is-over':''}" id="ctnzone-${ci}"
+        ondragover="event.preventDefault();this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="onDrop(event,${ci})">
+      <div class="ctn-hdr ${def.cls}">
+        <div class="ctn-num ${def.cls}">${ci+1}</div>
+        <div class="ctn-hdr-text">
+          <div class="ctn-hdr-name">${def.label}</div>
+          <div class="ctn-hdr-spec">${def.maxCBM} CBM · ${def.maxKG.toLocaleString()} kg · ~${def.cap} PLT</div>
+        </div>
+        <span class="sp ${spCls}" style="margin-left:auto">${spTxt}</span>
+      </div>
+      <div class="ctn-meters">
+        <div>
+          <div class="mr"><span class="mn">CBM</span><span class="mv">${totCBM.toFixed(2)} / ${def.maxCBM} &nbsp;(${pCBM}%)</span></div>
+          <div class="mtrack"><div class="mfill" style="width:${clamp(pCBM)}%;background:${barClr(pCBM)}"></div></div>
+        </div>
+        <div>
+          <div class="mr"><span class="mn">GW</span><span class="mv">${totGW.toFixed(0)} / ${def.maxKG.toLocaleString()} kg &nbsp;(${pGW}%)</span></div>
+          <div class="mtrack"><div class="mfill" style="width:${clamp(pGW)}%;background:${barClr(pGW)}"></div></div>
+        </div>
+        <div>
+          <div class="mr"><span class="mn">PLT</span><span class="mv">${totPlt} / ${def.cap} &nbsp;(${pPlt}%)</span></div>
+          <div class="mtrack"><div class="mfill" style="width:${clamp(pPlt)}%;background:${barClr(pPlt)}"></div></div>
+        </div>
+      </div>
+      <div class="ctn-body" id="ctnbody-${ci}"
+        ondragover="event.preventDefault();this.classList.add('dob')"
+        ondragleave="this.classList.remove('dob')"
+        ondrop="onDrop(event,${ci})">${tagHtml}</div>
+      <div class="ctn-foot">
+        <strong>${totPlt} PLT · ${totGW.toFixed(0)} kg · ${totCBM.toFixed(2)} CBM</strong>
+        <span>VGM ≈ <strong>${(totGW+def.tare).toFixed(0)} kg</strong></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══ INFOGRAPHIC ═══ */
+/* Build a 2-column container shape: pallets fill from the back (deepest row)
+   toward the door (bottom row), one part code fully filling its rows before
+   the next part code starts. Returns HTML for the shape + a door label. */
+function buildPalletShape(plts /* array of partIdx, already in fill order */, capacity){
+  const rows = [];
+  for(let i=0; i<plts.length; i+=2) rows.push([plts[i], plts[i+1]]); // [left,right] per row, undefined if odd
+  const totalRows = Math.ceil(capacity/2);
+  while(rows.length < totalRows) rows.push([undefined,undefined]);
+  // rows[0] = deepest (filled first) → rendered at TOP; last row = door → rendered at BOTTOM
+  const rowsHtml = rows.map(([l,r]) => {
+    const cell = (pi) => {
+      if(pi===undefined) return '<div class="info-empty"></div>';
+      const p = PARTS[pi];
+      return `<div class="info-plt" style="background:${p.bg};border-color:${p.border};color:${p.color}" title="${p.id}">${p.id.slice(-4)}</div>`;
+    };
+    return `<div class="ctn-shape-row">${cell(l)}${cell(r)}</div>`;
+  }).join('');
+  return `<div class="ctn-shape">
+    <div class="ctn-shape-rows">${rowsHtml}</div>
+    <div class="ctn-shape-door">⬇ ประตู / Door</div>
+  </div>`;
+}
+
+function renderInfo(){
+  const grid=document.getElementById('info-grid');
+  const leg=document.getElementById('info-legend');
+
+  if(appMode==='lcl'){
+    // LCL infographic
+    const allPartIdxUsed=new Set();
+    grid.innerHTML=lclSlots.map((s,si)=>{
+      const items=s.items;
+      const totGW=items.reduce((a,it)=>a+PARTS[it.partIdx].gw*it.count,0);
+      const totCBM=items.reduce((a,it)=>a+PARTS[it.partIdx].cbm*it.count,0);
+      const totPlt=items.reduce((a,it)=>a+it.count,0);
+      const mCBM=s.maxCBM||0, mKG=s.maxKG||0, mPLT=s.maxPLT||0;
+      const over=(mCBM&&totCBM>mCBM)||(mKG&&totGW>mKG)||(mPLT&&totPlt>mPLT);
+      const warn=!over&&((mCBM&&totCBM/mCBM>0.85)||(mKG&&totGW/mKG>0.85));
+      const plts=[];
+      items.forEach(it=>{ for(let n=0;n<it.count;n++) plts.push(it.partIdx); allPartIdxUsed.add(it.partIdx); });
+      const capPlt=mPLT||Math.max(totPlt,1);
+      const empty=Math.max(0,capPlt-plts.length);
+      return `<div class="info-card" style="border-color:var(--amber-border)">
+        <div class="info-card-hdr">
+          <div class="ctn-num t2">${si+1}</div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--ink)">${s.label}</div>
+            <div style="font-size:10px;color:var(--ink3);font-family:'DM Mono',monospace">${totPlt}${mPLT?'/'+mPLT:''} PLT · LCL</div>
+          </div>
+          <span class="sp ${over?'sp-over':warn?'sp-warn':'sp-ok'}" style="margin-left:auto">${over?'OVER':warn?'NEAR':'OK'}</span>
+        </div>
+        ${buildPalletShape(plts, capPlt)}
+        <div class="info-detail">
+          ${items.map(it=>`<div class="info-row"><span style="color:${PARTS[it.partIdx].color};font-weight:600">${PARTS[it.partIdx].id}</span><span style="font-family:'DM Mono',monospace">${it.count} PLT · ${(it.count*PARTS[it.partIdx].gw).toFixed(0)} kg · ${(it.count*PARTS[it.partIdx].cbm).toFixed(2)} CBM</span></div>`).join('')}
+          ${!items.length?'<span style="color:var(--ink3)">— ว่างเปล่า —</span>':''}
+          <div class="info-row" style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
+            <span style="font-weight:600">รวม</span>
+            <span style="font-family:'DM Mono',monospace">${totPlt} PLT · ${totGW.toFixed(0)} kg · ${totCBM.toFixed(2)} CBM</span>
+          </div>
+          ${mCBM||mKG?`<div class="info-row" style="color:var(--amber)">
+            <span>Capacity</span>
+            <span style="font-family:'DM Mono',monospace">${mCBM?mCBM+' CBM':'∞'} · ${mKG?mKG.toLocaleString()+' kg':'∞'}</span>
+          </div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    const usedArr=[...allPartIdxUsed];
+    leg.innerHTML='<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-right:8px">Legend:</div>'
+      +usedArr.map(pi=>{const p=PARTS[pi]; return `<div class="leg-item"><div class="leg-dot" style="background:${p.bg};border-color:${p.border}"></div>${p.id}</div>`;}).join('');
+    return;
+  }
+
+  // FCL infographic (original)
+  grid.innerHTML=containers.map((ctn,ci)=>{
+    const def=CTN_DEFS[ctn.typeIdx];
+    const items=ctn.items;
+    const totGW=items.reduce((s,it)=>s+PARTS[it.partIdx].gw*it.count,0);
+    const totCBM=items.reduce((s,it)=>s+PARTS[it.partIdx].cbm*it.count,0);
+    const totPlt=items.reduce((s,it)=>s+it.count,0);
+    const over=totGW>def.maxKG||totCBM>def.maxCBM;
+    const warn=!over&&(totGW/def.maxKG>0.85||totCBM/def.maxCBM>0.85);
+    const plts=[];
+    items.forEach(it=>{ for(let n=0;n<it.count;n++) plts.push(it.partIdx); });
+    const empty=Math.max(0,def.cap-plts.length);
+    return `<div class="info-card">
+      <div class="info-card-hdr">
+        <div class="ctn-num ${def.cls}">${ci+1}</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--ink)">${def.label}</div>
+          <div style="font-size:10px;color:var(--ink3);font-family:'DM Mono',monospace">${totPlt}/${def.cap} PLT</div>
+        </div>
+        <span class="sp ${over?'sp-over':warn?'sp-warn':'sp-ok'}" style="margin-left:auto">${over?'OVER':warn?'NEAR':'OK'}</span>
+      </div>
+      ${buildPalletShape(plts, def.cap)}
+      <div class="info-detail">
+        ${items.map(it=>`<div class="info-row"><span style="color:${PARTS[it.partIdx].color};font-weight:600">${PARTS[it.partIdx].id}</span><span style="font-family:'DM Mono',monospace">${it.count} PLT · ${(it.count*PARTS[it.partIdx].gw).toFixed(0)} kg · ${(it.count*PARTS[it.partIdx].cbm).toFixed(2)} CBM</span></div>`).join('')}
+        ${!items.length?'<span style="color:var(--ink3)">— ว่างเปล่า —</span>':''}
+        <div class="info-row" style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
+          <span>VGM</span><span style="font-family:'DM Mono',monospace">${(totGW+def.tare).toFixed(0)} kg</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const used=[...new Set(containers.flatMap(c=>c.items.map(it=>it.partIdx)))];
+  leg.innerHTML='<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-right:8px">Legend:</div>'
+    +used.map(pi=>{const p=PARTS[pi]; return `<div class="leg-item"><div class="leg-dot" style="background:${p.bg};border-color:${p.border}"></div>${p.id}</div>`;}).join('');
+}
+
+/* ═══ TOAST ═══ */
+function showToast(partId,cnt){
+  const old=document.getElementById('_toast'); if(old)old.remove();
+  const t=document.createElement('div'); t.id='_toast';
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1C1C1E;color:#fff;padding:9px 18px;border-radius:7px;font-size:12px;font-weight:500;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:fadein .2s ease;font-family:"DM Sans",sans-serif';
+  t.textContent=`ใส่ไม่พอ — ${cnt} PLT ของ ${partId} กลับฝั่งซ้ายแล้ว`;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.transition='opacity .4s'; t.style.opacity='0'; setTimeout(()=>t.remove(),400); },3000);
+}
+
+/* ═══ TAB ═══ */
+function switchTab(tab,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  document.getElementById('view-plan').style.display=tab==='plan'?'block':'none';
+  document.getElementById('view-infographic').style.display=tab==='infographic'?'block':'none';
+  if(tab==='infographic') renderInfo();
+}
+
+/* ═══ EXPOSE TO GLOBAL (needed for inline onclick with type=module) ═══ */
+Object.assign(window, {
+  onPcsChange, chgCtnCount, setMode, addLclSlot, removeLclSlot, lclUpdate,
+  onDrop, onLclDrop, onLclTagDragStart, onDragStart, lclRemoveItem, lclMoveBack,
+  addCustomer, renameCustomer, deleteCustomer, addPartToCustomer, deletePartFromCustomer,
+  toggleCust, showCustomForm, hideCustomForm, addCustomCtn, deleteCustomCtn,
+  switchTab, joinRoom, copyRoomLink,
+  fullRebuild, addLclSlot, removeLclSlot,
+  removeFromCtn, moveBack, toggleSpecInfo, hidePartForm, confirmAddPart,
+});
+
+/* ═══ FIREBASE SYNC (loaded dynamically so a failure here can't break drag/drop or any UI above) ═══ */
+let initializeApp, getDatabase, ref, onValue, set, serverTimestamp, onDisconnect, push, remove;
+let firebaseReady = false;
+
+async function loadFirebase(){
+  try{
+    const appMod = await import("https://king-fb-sdk.july-bp99.workers.dev/11.0.0/firebase-app.js");
+    const dbMod  = await import("https://king-fb-sdk.july-bp99.workers.dev/11.0.0/firebase-database.js");
+    ({ initializeApp } = appMod);
+    ({ getDatabase, ref, onValue, set, serverTimestamp, onDisconnect, push, remove } = dbMod);
+    firebaseReady = true;
+  } catch(e){
+    console.error('Firebase sync unavailable (drag/drop and the rest of the app still work):', e);
+    firebaseReady = false;
+    setStatus('ออฟไลน์ (ไม่ซิงค์)', '#C0382B');
+  }
+}
+
+const firebaseConfig = {
+  apiKey:"AIzaSyCp_yRlFEOMHlLJ7eYiOck1NNCaeIlDF8U",
+  authDomain:"container-planner.firebaseapp.com",
+  databaseURL:"https://king-fb-db.july-bp99.workers.dev",
+  projectId:"container-planner",
+  storageBucket:"container-planner.firebasestorage.app",
+  messagingSenderId:"109994711877",
+  appId:"1:109994711877:web:a2cef77bac6ff0b4823c2c"
+};
+let fbApp = null;
+let db = null;
+
+// Generate a random user colour + id for avatar
+const MY_ID = 'u_'+Math.random().toString(36).slice(2,7);
+const USER_COLORS = ['#3B6FD4','#2A7D52','#9A6200','#7C5FBF','#C0382B','#1A8A8A','#C07020','#C0587A'];
+const MY_COLOR = USER_COLORS[Math.floor(Math.random()*USER_COLORS.length)];
+const MY_INITIAL = String.fromCharCode(65+Math.floor(Math.random()*26));
+
+let currentRoom = null;
+Object.defineProperty(window,'currentRoom',{get:()=>currentRoom,set:v=>{currentRoom=v;}});
+let presenceRef = null;
+let dataRef = null;
+let isSyncing = false;   // flag to avoid re-broadcast on incoming update
+let unsubData = null;
+let unsubPresence = null;
+let syncDebounce = null;
+let pendingRemoteState = null; // holds a remote update we deliberately delayed while user is typing
+
+/* True while the user's cursor is inside a PCS quantity field — used to avoid
+   a remote teammate's update rebuilding the input DOM out from under them mid-keystroke */
+function isTypingInPcsField(){
+  const ae = document.activeElement;
+  return !!(ae && ae.tagName==='INPUT' && ae.id && ae.id.startsWith('pcs'));
+}
+
+/* Read room from URL ?room=xxx */
+function getRoomFromUrl(){
+  return new URLSearchParams(window.location.search).get('room');
+}
+
+function setStatus(txt, color='#9C9CA8'){
+  document.getElementById('sync-status').textContent=txt;
+  document.getElementById('sync-dot').style.background=color;
+}
+
+function joinRoom(roomOverride){
+  if(!firebaseReady || !db){ setStatus('ออฟไลน์ (ไม่ซิงค์)', '#C0382B'); return; }
+  const roomId = roomOverride || document.getElementById('room-input').value.trim() || 'default';
+  document.getElementById('room-input').value = roomId;
+  if(currentRoom===roomId) return;
+  // Cleanup previous
+  if(presenceRef) remove(presenceRef);
+  if(unsubData) unsubData();
+  if(unsubPresence) unsubPresence();
+  currentRoom = roomId;
+  // Update URL without reload
+  const url = new URL(window.location);
+  url.searchParams.set('room', roomId);
+  window.history.replaceState({}, '', url);
+  setStatus('กำลังเชื่อมต่อ…','#E8C000');
+  // Presence
+  presenceRef = push(ref(db, `rooms/${roomId}/users`));
+  set(presenceRef, {id:MY_ID, color:MY_COLOR, initial:MY_INITIAL, ts:serverTimestamp()});
+  onDisconnect(presenceRef).remove();
+  // Watch presence
+  unsubPresence = onValue(ref(db, `rooms/${roomId}/users`), snap=>{
+    const users = snap.val() ? Object.values(snap.val()) : [];
+    renderAvatars(users);
+  });
+  // Watch data
+  dataRef = ref(db, `rooms/${roomId}/state`);
+  unsubData = onValue(dataRef, snap=>{
+    const remote = snap.val();
+    if(!remote){ pushState(); return; }  // first join — push local state
+    setStatus(`ซิงค์แล้ว · ห้อง: ${roomId}`,'#2A7D52');
+    if(isSyncing) return;
+    if(isTypingInPcsField()){
+      // don't yank the field out from under the user right now — apply once they leave it
+      pendingRemoteState = remote;
+      return;
+    }
+    loadState(remote);
+  });
+}
+
+/* Once the user leaves a PCS field, apply any remote update we held back */
+document.addEventListener('focusout', (e)=>{
+  if(e.target && e.target.id && e.target.id.startsWith('pcs') && pendingRemoteState){
+    const rs = pendingRemoteState;
+    pendingRemoteState = null;
+    loadState(rs);
+  }
+}, true);
+
+function renderAvatars(users){
+  const el = document.getElementById('user-avatars');
+  el.innerHTML = users.slice(0,6).map(u=>`
+    <div title="ผู้ใช้ ${u.initial}" style="width:22px;height:22px;border-radius:50%;background:${u.color};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)">${u.initial}</div>
+  `).join('') + (users.length>6?`<div style="font-size:9px;color:var(--ink3)">+${users.length-6}</div>`:'');
+  const count = users.length;
+  setStatus(`${count} คนออนไลน์ · ห้อง: ${currentRoom}`, '#2A7D52');
+}
+
+function copyRoomLink(){
+  const url = new URL(window.location);
+  url.searchParams.set('room', currentRoom||'default');
+  navigator.clipboard.writeText(url.toString()).then(()=>{
+    showToast('คัดลอกลิงก์แล้ว! ส่งให้ทีมได้เลย',0);
+  });
+}
+
+/* Serialize full app state */
+function getState(){
+  const pcsMap = {};
+  PARTS.forEach((_,i)=>{ const el=document.getElementById('pcs'+i); pcsMap[i]=el?parseInt(el.value)||0:savedPcs[i]||0; });
+  return {
+    CUSTOMERS: JSON.parse(JSON.stringify(CUSTOMERS)),
+    ctnCounts,
+    pcsMap,
+    containers: JSON.parse(JSON.stringify(containers)),
+    lclSlots: JSON.parse(JSON.stringify(lclSlots)),
+    appMode,
+    customCtns: CTN_DEFS.filter(d=>d.custom).map(d=>({...d})),
+    ts: Date.now()
+  };
+}
+
+/* Push state to Firebase (debounced 600ms) */
+function pushState(){
+  if(!dataRef) return;
+  isSyncing = true; // block incoming snapshots immediately, not just once the debounced write fires
+  clearTimeout(syncDebounce);
+  syncDebounce = setTimeout(()=>{
+    set(dataRef, getState()).then(()=>{ setTimeout(()=>{ isSyncing=false; },300); });
+  }, 600);
+}
+
+/* Load state from Firebase */
+function loadState(s){
+  if(!s) return;
+  isSyncing = true;
+  try{
+    // Restore customers & parts
+    if(s.CUSTOMERS) CUSTOMERS = s.CUSTOMERS.map(c=>({...c, parts: c.parts||[]}));
+    // Restore custom ctns
+    CTN_DEFS = CTN_DEFS_BASE.map(d=>({...d}));
+    if(s.customCtns) s.customCtns.forEach(c=>CTN_DEFS.push(c));
+    // Restore ctnCounts
+    if(s.ctnCounts) Object.assign(ctnCounts, s.ctnCounts);
+    // Restore containers & lcl
+    if(s.containers) containers = s.containers.map(c=>({...c, items: c.items||[]}));
+    if(s.lclSlots) lclSlots = s.lclSlots.map(sl=>({...sl, items: sl.items||[]}));
+    // Restore pcs values (save in savedPcs before build)
+    if(s.pcsMap) Object.assign(savedPcs, s.pcsMap);
+    // Rebuild UI
+    rebuildParts();
+    buildPartInputs();
+    // Restore PCS input values
+    if(s.pcsMap) PARTS.forEach((_,i)=>{ const el=document.getElementById('pcs'+i); if(el) el.value=s.pcsMap[i]||0; });
+    buildCtnTypeGrid();
+    rebuildContainers();
+    // Restore mode
+    if(s.appMode && s.appMode!==appMode){
+      appMode = s.appMode;
+      document.getElementById('tab-fcl').className='mode-tab'+(appMode==='fcl'?' active-fcl':'');
+      document.getElementById('tab-lcl').className='mode-tab'+(appMode==='lcl'?' active-lcl':'');
+      document.getElementById('fcl-section').style.display=appMode==='fcl'?'block':'none';
+      document.getElementById('lcl-section').style.display=appMode==='lcl'?'block':'none';
+      document.getElementById('fcl-zones').style.display=appMode==='fcl'?'block':'none';
+      document.getElementById('lcl-zones').style.display=appMode==='lcl'?'block':'none';
+    }
+    onPcsChange();
+    updateCtnSummary();
+    if(appMode==='lcl'){ renderLclSection(); renderLclZones(); }
+    setStatus(`ซิงค์แล้ว · ห้อง: ${currentRoom}`,'#2A7D52');
+  } catch(e){ console.error('loadState error',e); }
+  setTimeout(()=>{ isSyncing=false; },400);
+}
+
+/* Hook every state-change function to also pushState */
+const _origOnPcs = onPcsChange;
+onPcsChange = function(){ _origOnPcs(); pushState(); };
+const _origChgCtn = chgCtnCount;
+chgCtnCount = function(i,d){ _origChgCtn(i,d); pushState(); };
+const _origSetMode = setMode;
+setMode = function(m){ _origSetMode(m); pushState(); };
+const _origAddLcl = addLclSlot;
+addLclSlot = function(){ _origAddLcl(); pushState(); };
+const _origRemLcl = removeLclSlot;
+removeLclSlot = function(i){ _origRemLcl(i); pushState(); };
+const _origDrop = onDrop;
+onDrop = function(e,ci){ _origDrop(e,ci); pushState(); };
+const _origLclDrop = onLclDrop;
+onLclDrop = function(e,si){ _origLclDrop(e,si); pushState(); };
+const _origAddCustom = addCustomCtn;
+addCustomCtn = function(){ _origAddCustom(); pushState(); };
+const _origFullRebuild = fullRebuild;
+fullRebuild = function(){ _origFullRebuild(); pushState(); };
+const _origLclUpdate = lclUpdate;
+lclUpdate = function(i,f,v){ _origLclUpdate(i,f,v); pushState(); };
+const _origLclRemove = lclRemoveItem;
+lclRemoveItem = function(si,pi){ _origLclRemove(si,pi); pushState(); };
+const _origRemoveFromCtn = removeFromCtn;
+removeFromCtn = function(ci,pi){ _origRemoveFromCtn(ci,pi); pushState(); };
+const _origMoveBack = moveBack;
+moveBack = function(pi,sign){ _origMoveBack(pi,sign); pushState(); };
+
+/* Re-expose the pushState-wrapped versions so inline HTML handlers (which look up
+   window.onDrop etc.) trigger Firebase sync too, once it's available. */
+Object.assign(window, {
+  onPcsChange, chgCtnCount, setMode, addLclSlot, removeLclSlot, lclUpdate,
+  onDrop, onLclDrop, addCustomCtn, fullRebuild, lclRemoveItem, joinRoom, copyRoomLink,
+  removeFromCtn, moveBack,
+});
+
+/* Live getters so the second <script type="module"> block (Send to Calendar)
+   always sees the current values of these module-scope variables. */
+['containers','pool','lclSlots','appMode','PARTS']
+  .forEach(name => {
+    Object.defineProperty(window, name, {
+      configurable: true,
+      get(){ return eval(name); }
+    });
+  });
+window.buildInfographicSnapshot = function(){
+  if (appMode === 'lcl') {
+    return lclSlots.map((s, si) => {
+      const items = s.items || [];
+      const totGW  = items.reduce((a,it)=>a + PARTS[it.partIdx].gw  * it.count, 0);
+      const totCBM = items.reduce((a,it)=>a + PARTS[it.partIdx].cbm * it.count, 0);
+      const totPlt = items.reduce((a,it)=>a + it.count, 0);
+      return {
+        ctnNo: si + 1,
+        ctnType: s.label || 'LCL',
+        items: items.map(it => ({
+          partId: PARTS[it.partIdx].id,
+          plt: it.count,
+          pcs: it.count * PARTS[it.partIdx].div,
+          kg: Math.round(PARTS[it.partIdx].gw  * it.count),
+          cbm: +(PARTS[it.partIdx].cbm * it.count).toFixed(2),
+        })),
+        totalPlt: totPlt,
+        totalKg: Math.round(totGW),
+        totalCbm: +totCBM.toFixed(2),
+        vgm: null,
+      };
+    });
+  }
+  return containers.map((ctn, ci) => {
+    const def = CTN_DEFS[ctn.typeIdx];
+    const items = ctn.items || [];
+    const totGW  = items.reduce((a,it)=>a + PARTS[it.partIdx].gw  * it.count, 0);
+    const totCBM = items.reduce((a,it)=>a + PARTS[it.partIdx].cbm * it.count, 0);
+    const totPlt = items.reduce((a,it)=>a + it.count, 0);
+    return {
+      ctnNo: ci + 1,
+      ctnType: def.label,
+      items: items.map(it => ({
+        partId: PARTS[it.partIdx].id,
+        plt: it.count,
+        pcs: it.count * PARTS[it.partIdx].div,
+        kg: Math.round(PARTS[it.partIdx].gw  * it.count),
+        cbm: +(PARTS[it.partIdx].cbm * it.count).toFixed(2),
+      })),
+      totalPlt: totPlt,
+      totalKg: Math.round(totGW),
+      totalCbm: +totCBM.toFixed(2),
+      vgm: Math.round(totGW + (def.tare || 0)),
+    };
+  });
+};
+
+// Build infographic filtered to a specific customer (by custIdx)
+window.buildInfographicForCustomer = function(custIdx){
+  if (appMode === 'lcl') return window.buildInfographicSnapshot(); // LCL: no per-customer split
+  const result = [];
+  containers.forEach((ctn, ci) => {
+    const def = CTN_DEFS[ctn.typeIdx];
+    const allItems = ctn.items || [];
+    // filter to only this customer's parts
+    const items = allItems.filter(it => PARTS[it.partIdx] && PARTS[it.partIdx].custIdx === custIdx);
+    if (!items.length) return; // this container has nothing for this customer
+    const totGW  = items.reduce((a,it)=>a + PARTS[it.partIdx].gw  * it.count, 0);
+    const totCBM = items.reduce((a,it)=>a + PARTS[it.partIdx].cbm * it.count, 0);
+    const totPlt = items.reduce((a,it)=>a + it.count, 0);
+    result.push({
+      ctnNo: ci + 1,
+      ctnType: def.label,
+      items: items.map(it => ({
+        partId: PARTS[it.partIdx].id,
+        plt: it.count,
+        pcs: it.count * PARTS[it.partIdx].div,
+        kg: Math.round(PARTS[it.partIdx].gw  * it.count),
+        cbm: +(PARTS[it.partIdx].cbm * it.count).toFixed(2),
+      })),
+      totalPlt: totPlt,
+      totalKg: Math.round(totGW),
+      totalCbm: +totCBM.toFixed(2),
+      vgm: Math.round(totGW + (def.tare || 0)),
+    });
+  });
+  return result;
+};
+ctnCounts = {0:2, 1:0, 2:0};
+rebuildParts();
+buildPartInputs();
+buildCtnTypeGrid();
+rebuildContainers();
+updateCtnSummary();
+PARTS.forEach((_,i)=>{ pool[i]=0; });
+recalcPool();
+renderPool();
+renderContainers();
+
+// Auto-join room from URL or default (after Firebase loads; UI above already works regardless)
+const urlRoom = getRoomFromUrl();
+if(urlRoom) document.getElementById('room-input').value = urlRoom;
+loadFirebase().then(()=>{
+  if(firebaseReady){
+    fbApp = initializeApp(firebaseConfig);
+    db = getDatabase(fbApp);
+    joinRoom(urlRoom || 'default');
+  }
+});
+
+</script>
+
+<!-- ═══ SEND TO CALENDAR MODAL ═══ -->
+<style>
+.stc-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(10,20,50,0.55); z-index:9000;
+  align-items:center; justify-content:center; padding:20px;
+}
+.stc-overlay.open { display:flex; }
+.stc-modal {
+  background:#fff; border-radius:16px; width:100%; max-width:480px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden;
+}
+.stc-header {
+  background:#0f1f3d; padding:16px 22px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.stc-header h2 { font-size:15px; font-weight:600; color:#fff; }
+.stc-close {
+  background:rgba(255,255,255,0.15); border:none; border-radius:50%;
+  width:28px; height:28px; color:#fff; font-size:15px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.stc-body { padding:20px 22px; }
+.stc-preview {
+  background:#f3f5fa; border:1px solid #d0daf0; border-radius:10px;
+  padding:12px 14px; margin-bottom:16px; font-size:12px; line-height:1.8;
+}
+.stc-preview strong { color:#1a2540; font-weight:600; }
+.stc-preview span   { color:#5a6a8a; font-family:'DM Mono',monospace; }
+.stc-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+.stc-row.full { grid-template-columns:1fr; }
+.stc-group { display:flex; flex-direction:column; gap:4px; }
+.stc-label { font-size:11px; font-weight:600; color:#5a6a8a; text-transform:uppercase; letter-spacing:0.4px; }
+.stc-input, .stc-select {
+  border:1.5px solid #c8d4ec; border-radius:8px;
+  padding:8px 11px; font-size:13px; font-family:'DM Sans',sans-serif;
+  color:#1a2540; outline:none; transition:border-color 0.15s; background:#fff;
+}
+.stc-input:focus, .stc-select:focus {
+  border-color:#3d5a99; box-shadow:0 0 0 3px rgba(61,90,153,0.12);
+}
+.stc-footer { padding:12px 22px 18px; display:flex; gap:10px; justify-content:flex-end; }
+.stc-btn-cancel {
+  background:#e8eef8; border:1.5px solid #c8d4ec; color:#5a6a8a;
+  border-radius:8px; padding:9px 18px; font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer;
+}
+.stc-btn-send {
+  background:#0f1f3d; border:none; color:#fff;
+  border-radius:8px; padding:9px 22px; font-size:13px; font-family:'DM Sans',sans-serif;
+  font-weight:600; cursor:pointer; transition:background 0.15s;
+}
+.stc-btn-send:hover { background:#2a4a8a; }
+.stc-btn-send:disabled { background:#aaa; cursor:not-allowed; }
+.stc-success {
+  display:none; flex-direction:column; align-items:center;
+  padding:32px 22px; text-align:center; gap:10px;
+}
+.stc-success .icon { font-size:48px; }
+.stc-success h3 { font-size:16px; font-weight:700; color:#0d7a4e; }
+.stc-success p  { font-size:13px; color:#5a6a8a; }
+
+/* color swatches mini */
+.stc-swatches { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+.stc-swatch {
+  width:24px; height:24px; border-radius:5px; cursor:pointer;
+  border:2.5px solid transparent; transition:transform 0.1s;
+}
+.stc-swatch:hover { transform:scale(1.15); }
+.stc-swatch.sel { border-color:#1a2540; transform:scale(1.15); }
+</style>
+
+<div class="stc-overlay" id="stcOverlay">
+  <div class="stc-modal">
+    <div class="stc-header">
+      <h2>📅 ส่งข้อมูลไป Shipment Calendar</h2>
+      <button class="stc-close" onclick="closeSendToCalendar()">✕</button>
+    </div>
+
+    <!-- form view -->
+    <div id="stcForm">
+      <div class="stc-body">
+        <!-- login status for calendar's Firestore (owner-only write) -->
+        <div class="stc-authbar" id="stcAuthBar" style="display:flex;align-items:center;gap:8px;justify-content:space-between;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;">
+          <span id="stcAuthStatus">🔒 ยังไม่ได้เข้าสู่ระบบ Calendar</span>
+          <button type="button" class="stc-btn-cancel" id="stcAuthBtn" style="padding:4px 10px;font-size:12px" onclick="calAuthToggle()">เข้าสู่ระบบ</button>
+        </div>
+        <!-- preview of what will be sent -->
+        <div class="stc-preview" id="stcPreview">กำลังโหลดข้อมูล...</div>
+
+        <div class="stc-row">
+          <div class="stc-group">
+            <label class="stc-label">Wk. (Week)</label>
+            <input class="stc-input" id="stcWk" type="text" placeholder="เช่น WK26">
+          </div>
+          <div class="stc-group">
+            <label class="stc-label">SO — สถานะ</label>
+            <select class="stc-select" id="stcSo">
+              <option value="so_ok">✓ ใช้ได้เลย</option>
+              <option value="so_wait">⏳ รอแก้ไข</option>
+              <option value="so_done">✔ แก้ไขแล้ว</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="stc-row">
+          <div class="stc-group">
+            <label class="stc-label">SO / Booking Number</label>
+            <input class="stc-input" id="stcSoNum" type="text" placeholder="SO-TH-...">
+          </div>
+          <div class="stc-group">
+            <label class="stc-label">LB — Label</label>
+            <select class="stc-select" id="stcLb">
+              <option value="lb_notyet">ยังไม่สั่งปริ้น</option>
+              <option value="lb_printed">สั่งปริ้นแล้ว</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="stc-row">
+          <div class="stc-group">
+            <label class="stc-label">Cfd. (Cut-off Date)</label>
+            <input class="stc-input" id="stcCfd" type="date">
+          </div>
+          <div class="stc-group">
+            <label class="stc-label">Lod. (Loading Date)</label>
+            <input class="stc-input" id="stcLod" type="date">
+          </div>
+        </div>
+
+        <div class="stc-row full">
+          <div class="stc-group">
+            <label class="stc-label">สีประจำ Shipment นี้</label>
+            <div class="stc-swatches" id="stcSwatches"></div>
+          </div>
+        </div>
+      </div>
+      <div class="stc-footer">
+        <button class="stc-btn-cancel" onclick="closeSendToCalendar()">ยกเลิก</button>
+        <button class="stc-btn-send" id="stcSendBtn" onclick="doSendToCalendar()">📅 ส่งไป Calendar</button>
+      </div>
+    </div>
+
+    <!-- success view -->
+    <div class="stc-success" id="stcSuccess">
+      <div class="icon">✅</div>
+      <h3>ส่งข้อมูลแล้ว!</h3>
+      <p id="stcSuccessMsg">Shipment ถูกเพิ่มใน Calendar แล้ว</p>
+      <button class="stc-btn-send" onclick="closeSendToCalendar()" style="margin-top:8px">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp, getApps } from 'https://king-fb-sdk.july-bp99.workers.dev/11.0.0/firebase-app.js';
+import { initializeFirestore, collection, doc, setDoc }
+  from 'https://king-fb-sdk.july-bp99.workers.dev/11.0.0/firebase-firestore.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
+  from 'https://king-fb-sdk.july-bp99.workers.dev/11.0.0/firebase-auth.js';
+
+// ── Calendar's Firestore config (shipment-calendar project) ────────
+const CAL_CONFIG = {
+  apiKey:            "AIzaSyDyDKd9EDPy55AB0BEotMh3CKaE52dNaPY",
+  authDomain:        "shipment-calendar-8cee8.firebaseapp.com",
+  projectId:         "shipment-calendar-8cee8",
+  storageBucket:     "shipment-calendar-8cee8.firebasestorage.app",
+  messagingSenderId: "838455009882",
+  appId:             "1:838455009882:web:65556cc4779f93abd7ae63"
+};
+
+// Use a named app so it doesn't clash with the calculator's own Firebase
+const calApp = getApps().find(a => a.name === 'calendar-app')
+  || initializeApp(CAL_CONFIG, 'calendar-app');
+const calDb  = initializeFirestore(calApp, { host: 'king-fb-fs.july-bp99.workers.dev', ssl: true });
+const SHIPS  = collection(calDb, 'shipments');
+
+// ── Owner auth for Calendar's Firestore ────────────────────────────
+// การเขียนเข้า collection 'shipments' ต้อง login ด้วยบัญชี owner เดียวกับ
+// ที่ใช้ในหน้า Shipment Calendar (Firebase Authentication → Email/Password)
+const calAuth = getAuth(calApp);
+let calAuthUser = null;
+
+function refreshAuthBar() {
+  const statusEl = document.getElementById('stcAuthStatus');
+  const btnEl    = document.getElementById('stcAuthBtn');
+  if (!statusEl || !btnEl) return;
+  if (calAuthUser) {
+    statusEl.textContent = `🔓 เข้าสู่ระบบแล้ว — ${calAuthUser.email || ''}`;
+    btnEl.textContent = 'ออกจากระบบ';
+  } else {
+    statusEl.textContent = '🔒 ยังไม่ได้เข้าสู่ระบบ Calendar';
+    btnEl.textContent = 'เข้าสู่ระบบ';
+  }
+}
+
+onAuthStateChanged(calAuth, (user) => {
+  calAuthUser = user;
+  refreshAuthBar();
+});
+
+async function ensureCalAuth() {
+  if (calAuthUser) return calAuthUser;
+  const email = prompt('ต้องเข้าสู่ระบบก่อนส่งข้อมูลไป Calendar\nอีเมล owner:');
+  if (!email) return null;
+  const password = prompt('รหัสผ่าน:');
+  if (!password) return null;
+  try {
+    const cred = await signInWithEmailAndPassword(calAuth, email.trim(), password);
+    calAuthUser = cred.user;
+    refreshAuthBar();
+    return calAuthUser;
+  } catch (e) {
+    console.error(e);
+    alert('เข้าสู่ระบบไม่สำเร็จ — ตรวจสอบอีเมล/รหัสผ่านอีกครั้ง');
+    return null;
+  }
+}
+
+window.calAuthToggle = async () => {
+  if (calAuthUser) {
+    if (confirm('ออกจากระบบ Calendar?')) {
+      try { await signOut(calAuth); } catch (e) { console.error(e); }
+    }
+    return;
+  }
+  const email = prompt('อีเมล owner (Shipment Calendar):');
+  if (!email) return;
+  const password = prompt('รหัสผ่าน:');
+  if (!password) return;
+  try {
+    await signInWithEmailAndPassword(calAuth, email.trim(), password);
+  } catch (e) {
+    console.error(e);
+    alert('เข้าสู่ระบบไม่สำเร็จ — ตรวจสอบอีเมล/รหัสผ่านอีกครั้ง');
+  }
+};
+
+// ── Pastel palette (same as Calendar) ─────────────────────────────
+const PASTEL = [
+  {border:'#3b82f6',bg:'#eff6ff'},{border:'#22c55e',bg:'#f0fdf4'},
+  {border:'#a855f7',bg:'#faf5ff'},{border:'#f59e0b',bg:'#fffbeb'},
+  {border:'#06b6d4',bg:'#ecfeff'},{border:'#ec4899',bg:'#fdf2f8'},
+  {border:'#84cc16',bg:'#f7fee7'},{border:'#f97316',bg:'#fff7ed'},
+  {border:'#ef4444',bg:'#fef2f2'},{border:'#14b8a6',bg:'#f0fdfa'},
+  {border:'#8b5cf6',bg:'#f5f3ff'},{border:'#78716c',bg:'#fafaf9'},
+];
+let stcColor = PASTEL[0];
+
+// ── Build swatches ─────────────────────────────────────────────────
+function buildStcSwatches() {
+  const row = document.getElementById('stcSwatches');
+  row.innerHTML = '';
+  PASTEL.forEach((p, i) => {
+    const sw = document.createElement('div');
+    sw.className = 'stc-swatch' + (i === 0 ? ' sel' : '');
+    sw.style.background = p.bg;
+    sw.style.borderColor = i === 0 ? '#1a2540' : 'transparent';
+    sw.style.outline = `2px solid ${p.border}`;
+    sw.title = p.border;
+    sw.onclick = () => {
+      stcColor = p;
+      row.querySelectorAll('.stc-swatch').forEach((s, j) => {
+        s.classList.toggle('sel', j === i);
+        s.style.borderColor = j === i ? '#1a2540' : 'transparent';
+      });
+    };
+    row.appendChild(sw);
+  });
+}
+
+// ── Build preview from current Calculator state ────────────────────
+function buildPreview() {
+  // Container summary
+  const ctnParts = [];
+  if (window.CTN_DEFS && window.ctnCounts) {
+    window.CTN_DEFS.forEach((def, i) => {
+      const n = window.ctnCounts[i] || 0;
+      if (n > 0) ctnParts.push(`${n}×${def.label}`);
+    });
+  }
+  const ctnStr   = ctnParts.join(' + ') || '—';
+  const totalCtn = window.CTN_DEFS
+    ? window.CTN_DEFS.reduce((s,_,i) => s + (window.ctnCounts[i]||0), 0)
+    : 0;
+
+  // Customer / invoice names
+  const custNames = window.CUSTOMERS
+    ? window.CUSTOMERS.map(c => c.name).join(', ')
+    : '—';
+
+  document.getElementById('stcPreview').innerHTML = `
+    <strong>ตู้ที่ใช้:</strong> <span>${ctnStr} (รวม ${totalCtn} ตู้)</span><br>
+    <strong>ลูกค้า/Invoice:</strong> <span>${custNames}</span><br>
+    <strong>Room:</strong> <span>${window.currentRoom || 'default'}</span>
+  `;
+
+  // Pre-fill Wk from room name
+  const wkInput = document.getElementById('stcWk');
+  if (!wkInput.value && window.currentRoom && window.currentRoom !== 'default') {
+    wkInput.value = window.currentRoom;
+  }
+
+  return { ctnStr, totalCtn, custNames };
+}
+
+// ── Open / Close ───────────────────────────────────────────────────
+window.openSendToCalendar = () => {
+  document.getElementById('stcForm').style.display = 'block';
+  document.getElementById('stcSuccess').style.display = 'none';
+  document.getElementById('stcSendBtn').disabled = false;
+  buildStcSwatches();
+  buildPreview();
+  refreshAuthBar();
+  document.getElementById('stcOverlay').classList.add('open');
+};
+
+window.closeSendToCalendar = () => {
+  document.getElementById('stcOverlay').classList.remove('open');
+};
+
+// ── Send ───────────────────────────────────────────────────────────
+window.doSendToCalendar = async () => {
+  const btn = document.getElementById('stcSendBtn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังส่ง…';
+
+  // Must be logged in as Calendar owner before writing to Firestore
+  const user = await ensureCalAuth();
+  if (!user) {
+    btn.textContent = '📅 ส่งไป Calendar';
+    btn.disabled = false;
+    return;
+  }
+
+  const { ctnStr, totalCtn, custNames } = buildPreview();
+
+  // Build one shipment entry per customer, or one combined
+  const customers = window.CUSTOMERS || [];
+  const entries = customers.length > 0 ? customers : [{ name: custNames }];
+
+  try {
+    for (let ci = 0; ci < entries.length; ci++) {
+      const cust = entries[ci];
+      const id  = 'calc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,5);
+      const cntStatus = totalCtn > 0 ? '' : '';
+
+      // Build CNT vol string: e.g. "2×40HQ + 1×20GP"
+      const ctnParts = [];
+      if (window.CTN_DEFS && window.ctnCounts) {
+        window.CTN_DEFS.forEach((def, i) => {
+          const n = window.ctnCounts[i] || 0;
+          if (n > 0) ctnParts.push(`${n}×${def.label}`);
+        });
+      }
+
+      // Per-customer infographic: only containers/items belonging to this customer
+      const custIdx = customers.length > 0 ? ci : -1;
+      const infographic = (window.buildInfographicForCustomer && custIdx >= 0)
+        ? window.buildInfographicForCustomer(custIdx)
+        : (window.buildInfographicSnapshot ? window.buildInfographicSnapshot() : []);
+      const totalGW  = infographic.reduce((a,c)=>a + (c.totalKg||0), 0);
+      const totalCBM = +infographic.reduce((a,c)=>a + (c.totalCbm||0), 0).toFixed(2);
+      const custCtnCount = infographic.length; // number of containers this customer has items in
+      const custCtnStr = custCtnCount > 0
+        ? [...new Set(infographic.map(c=>c.ctnType))].map(type => {
+            const n = infographic.filter(c=>c.ctnType===type).length;
+            return `${n}×${type}`;
+          }).join(' + ')
+        : ctnStr;
+
+      const shipment = {
+        id,
+        wk:          document.getElementById('stcWk').value.trim() || window.currentRoom || '',
+        inv:         cust.name || custNames,
+        cntStatus:   '',
+        cntQty:      String(custCtnCount || totalCtn),
+        soStatus:    document.getElementById('stcSo').value,
+        soNum:       document.getElementById('stcSoNum').value.trim(),
+        lbStatus:    document.getElementById('stcLb').value,
+        cfd:         document.getElementById('stcCfd').value,
+        lod:         document.getElementById('stcLod').value,
+        colorBorder: stcColor.border,
+        done:        false,
+        // extra info from calculator
+        fromCalc:    true,
+        cntLabel:    custCtnStr,
+        customers:   cust.name || custNames,
+        totalGW:     totalGW,
+        totalCBM:    totalCBM,
+        _infographic: infographic,
+        _ctnDetail:  ctnStr,
+        _source:     'container_calculator',
+        _room:       window.currentRoom || 'default',
+        _createdAt:  new Date().toISOString(),
+      };
+
+      // Skip customer if they have no items in any container
+      if (custIdx >= 0 && infographic.length === 0) continue;
+
+      await setDoc(doc(SHIPS, id), shipment);
+      // small delay to ensure unique timestamps in IDs for next iteration
+      if (ci < entries.length - 1) await new Promise(r => setTimeout(r, 50));
+    }
+
+    // Show success
+    document.getElementById('stcForm').style.display = 'none';
+    document.getElementById('stcSuccess').style.display = 'flex';
+    document.getElementById('stcSuccessMsg').textContent =
+      `เพิ่ม ${entries.length} shipment เข้า Calendar แล้ว ✓`;
+
+  } catch(e) {
+    console.error(e);
+    if (e && e.code === 'permission-denied') {
+      alert('ไม่มีสิทธิ์เขียนข้อมูล — กรุณาเข้าสู่ระบบด้วยบัญชี owner ที่ถูกต้องแล้วลองใหม่');
+    }
+    btn.textContent = '❌ Error — ลองใหม่';
+    btn.disabled = false;
+  }
+};
+</script>
+
+</body>
+</html>
